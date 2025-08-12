@@ -1,15 +1,32 @@
-import { ButtonBuilder, ButtonInteraction, ButtonStyle, MessageFlags } from 'discord.js';
-
-const flags = MessageFlags.Ephemeral;
+import { ButtonBuilder, ButtonInteraction, ButtonStyle } from 'discord.js';
+import * as user from '../modules/user';
 
 const registration = {
-  button: {
+  draw: {
     component: new ButtonBuilder()
-      .setCustomId('button')
-      .setLabel('コモドドラゴンのメス')
+      .setCustomId('draw')
+      .setLabel('今日の運勢を占う')
       .setStyle(ButtonStyle.Primary),
     async execute(interaction: ButtonInteraction) {
-      await interaction.reply({ content: 'これが本当のけものフレンズ', flags });
+      await user.draw(interaction);
+    },
+  },
+  counts: {
+    component: new ButtonBuilder()
+      .setCustomId('counts')
+      .setLabel('今まで何をひいてきたかな？')
+      .setStyle(ButtonStyle.Secondary),
+    async execute(interaction: ButtonInteraction) {
+      await user.displayCounts(interaction);
+    },
+  },
+  todayResult: {
+    component: new ButtonBuilder()
+      .setCustomId('todayResult')
+      .setLabel('チャンネルに今日の運勢を送信する')
+      .setStyle(ButtonStyle.Secondary),
+    async execute(interaction: ButtonInteraction) {
+      await user.displayTodayResult(interaction);
     },
   },
 };

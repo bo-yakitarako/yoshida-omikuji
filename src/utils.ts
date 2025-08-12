@@ -31,7 +31,7 @@ export function buildEmbed(
 export function buildEmbed(title: string, ...params: DescriptionParams | FieldsParams | AllParams) {
   let description = '';
   let fields: EmbedField[] = [];
-  let color: ColorKey = 'info';
+  let color: ColorKey = 'success';
   if (params[0] instanceof Array) {
     fields = params[0];
     if (typeof params[1] === 'string') {

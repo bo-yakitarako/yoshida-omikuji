@@ -4,14 +4,21 @@ import {
   SlashCommandBuilder,
   TextChannel,
 } from 'discord.js';
+import * as guild from '../modules/guild';
 
 const flags = MessageFlags.Ephemeral;
 
 const registration = {
-  help: {
-    data: new SlashCommandBuilder().setName('help').setDescription('たすけてくれ～'),
+  notice: {
+    data: new SlashCommandBuilder().setName('notice').setDescription('このチャンネルに通知するよ'),
     execute: async (interaction: ChatInputCommandInteraction) => {
-      await interaction.reply({ content: 'おぼぼぼぼ', flags });
+      await guild.setNoticeChannel(interaction);
+    },
+  },
+  clear: {
+    data: new SlashCommandBuilder().setName('clear').setDescription('通知先を解除するよ'),
+    execute: async (interaction: ChatInputCommandInteraction) => {
+      await guild.clearNotice(interaction);
     },
   },
 };
