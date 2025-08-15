@@ -14,12 +14,7 @@ const omikuji = {
 const percentages = [1, 10, 30, 45, 60, 70, 90, 101] as const;
 type Omikuji = keyof typeof omikuji;
 
-type Props = {
-  discordId: string;
-  result: { [key in string]: Omikuji };
-};
-
-export class User extends Model<Props> {
+export class User extends Model<{ discordId: string; result: { [key: string]: Omikuji } }> {
   protected static _collectionName = 'users';
 
   public get discordId() {

@@ -1,11 +1,6 @@
 import { Model } from './Model';
 
-type Props = {
-  guildId: string;
-  channelId: string;
-};
-
-export class NoticeChannel extends Model<Props> {
+export class NoticeChannel extends Model<{ guildId: string; channelId: string }> {
   protected static _collectionName = 'notice_channels';
 
   public get guildId() {
