@@ -11,13 +11,13 @@ const registration = {
       await user.draw(interaction);
     },
   },
-  counts: {
+  checkCounts: {
     component: new ButtonBuilder()
-      .setCustomId('counts')
+      .setCustomId('checkCounts')
       .setLabel('今まで何をひいてきたかな？')
       .setStyle(ButtonStyle.Secondary),
     async execute(interaction: ButtonInteraction) {
-      await user.displayCounts(interaction);
+      await user.checkCounts(interaction);
     },
   },
   todayResult: {
@@ -27,6 +27,15 @@ const registration = {
       .setStyle(ButtonStyle.Secondary),
     async execute(interaction: ButtonInteraction) {
       await user.displayTodayResult(interaction);
+    },
+  },
+  noticeCounts: {
+    component: new ButtonBuilder()
+      .setCustomId('noticeCounts')
+      .setLabel('今までの軌跡をみんなに共有する')
+      .setStyle(ButtonStyle.Secondary),
+    async execute(interaction: ButtonInteraction) {
+      await user.noticeCounts(interaction);
     },
   },
 };

@@ -3,6 +3,7 @@ import {
   Client,
   MessageFlags,
   PermissionsBitField,
+  RepliableInteraction,
   TextChannel,
 } from 'discord.js';
 import { NoticeChannel } from '../db/NoticeChannel';
@@ -165,7 +166,7 @@ const messages = [
 export const sendNotices = async (client: Client) => {
   const noticeChannels = await NoticeChannel.findMany();
   const content = messages[Math.floor(Math.random() * messages.length)];
-  const components = [makeButtonRow('draw', 'counts')];
+  const components = [makeButtonRow('draw', 'checkCounts')];
   for (const { guildId, channelId } of noticeChannels) {
     const guild = await client.guilds.fetch(guildId);
     const channel = await guild?.channels.fetch(channelId);
@@ -173,4 +174,38 @@ export const sendNotices = async (client: Client) => {
       await channel.send({ content, components });
     }
   }
+};
+
+export const sendNoticeManually = async (interaction: ChatInputCommandInteraction) => {
+  if ((await checkTargetChannel(interaction)) === null) {
+    return;
+  }
+  const components = [makeButtonRow('draw', 'checkCounts')];
+  await interaction.reply({ content: '明日の自動通知なんて待ってらんねえぜ', components });
+};
+
+export const checkTargetChannel = async (interaction: RepliableInteraction) => {
+  const { guildId, channelId } = interaction;
+  if (guildId === null) {
+    await interaction.reply({ content: 'こんなところは野暮だと思わないかね？', flags });
+    return null;
+  }
+  const noticeChannel = await NoticeChannel.find({ guildId });
+  if (noticeChannel === null) {
+    const content = '```/notice```して通知先を設定してほしいのだ。管理者しかできねえけどな！';
+    await interaction.reply({ content, flags });
+    return null;
+  }
+  const targetChannel = interaction.guild?.channels.cache.get(noticeChannel.channelId) ?? null;
+  if (targetChannel instanceof TextChannel) {
+    if (channelId !== targetChannel.id) {
+      const content = `通知先に設定してある<#${targetChannel.id}>でやろうね`;
+      await interaction.reply({ content, flags });
+      return null;
+    }
+    return targetChannel;
+  }
+  const content = '通知先のチャンネル消えてね？```/notice```して通知先を再設定してほしいのだ';
+  await interaction.reply({ content, flags });
+  return null;
 };

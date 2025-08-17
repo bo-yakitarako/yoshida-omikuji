@@ -1,10 +1,15 @@
 import { ButtonInteraction, MessageFlags, RepliableInteraction, TextChannel } from 'discord.js';
 import { User } from '../db/User';
 import { buildEmbed, makeButtonRow } from '../utils';
+import { checkTargetChannel } from './guild';
 
 const flags = MessageFlags.Ephemeral;
 
-export const draw = async (interaction: ButtonInteraction) => {
+export const draw = async (interaction: RepliableInteraction) => {
+  const target = await checkTargetChannel(interaction);
+  if (target === null) {
+    return;
+  }
   const discordId = interaction.user.id;
   let user = (await User.find({ discordId }))!;
   if (user === null) {
@@ -12,26 +17,33 @@ export const draw = async (interaction: ButtonInteraction) => {
   }
   const { omikuji, success } = await user.draw();
   if (!success) {
-    const content = `今日はもう占い済みで、**${omikuji}**だったよ。このチャンネルのみんなに知らせる場合はボタンを押してね`;
+    const content = `今日はもう占い済みで、**${omikuji}**だったよ\nこのチャンネルのみんなに知らせる場合はボタンを押してね`;
     const components = [makeButtonRow('todayResult')];
     await interaction.reply({ content, components, flags });
     return;
   }
-  await interaction.deferUpdate();
   const embeds = [buildEmbed(`${name(interaction)}くんの今日の運勢`, omikuji)];
-  await (interaction.channel as TextChannel).send({ embeds });
+  if (interaction.isButton()) {
+    await interaction.deferUpdate();
+    await target.send({ embeds });
+  } else {
+    await interaction.reply({ embeds });
+  }
 };
 
-export const displayCounts = async (interaction: ButtonInteraction) => {
+export const checkCounts = async (interaction: RepliableInteraction) => {
+  if ((await checkTargetChannel(interaction)) === null) {
+    return;
+  }
   const discordId = interaction.user.id;
   const user = await User.find({ discordId });
   if (user === null) {
     await interaction.reply({ content: '1回占ってこようねー', flags });
     return;
   }
-  await interaction.deferUpdate();
+  const content = '吉田は何回出たかなー？\nみんなに共有する場合はボタンを押してね';
   const embeds = [buildEmbed(`${name(interaction)}くんの軌跡`, user.buildCountDescription())];
-  await (interaction.channel as TextChannel).send({ embeds });
+  await interaction.reply({ content, embeds, components: [makeButtonRow('noticeCounts')], flags });
 };
 
 export const displayTodayResult = async (interaction: ButtonInteraction) => {
@@ -39,6 +51,14 @@ export const displayTodayResult = async (interaction: ButtonInteraction) => {
   const discordId = interaction.user.id;
   const user = (await User.find({ discordId }))!;
   const embeds = [buildEmbed(`${name(interaction)}くんの今日の運勢`, user.todayOmikuji)];
+  await (interaction.channel as TextChannel).send({ embeds });
+};
+
+export const noticeCounts = async (interaction: ButtonInteraction) => {
+  await interaction.deferUpdate();
+  const discordId = interaction.user.id;
+  const user = (await User.find({ discordId }))!;
+  const embeds = [buildEmbed(`${name(interaction)}くんの軌跡`, user.buildCountDescription())];
   await (interaction.channel as TextChannel).send({ embeds });
 };
 
