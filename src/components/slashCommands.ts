@@ -40,6 +40,12 @@ const registration = {
       await user.checkCounts(interaction);
     },
   },
+  total: {
+    data: new SlashCommandBuilder().setName('total').setDescription('今までの全おみくじを見るよ'),
+    execute: async (interaction: ChatInputCommandInteraction) => {
+      await user.sendTotalResult(interaction);
+    },
+  },
 };
 
 type CommandName = keyof typeof registration;

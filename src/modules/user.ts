@@ -1,5 +1,5 @@
 import { ButtonInteraction, MessageFlags, RepliableInteraction, TextChannel } from 'discord.js';
-import { User } from '../db/User';
+import { omikuji, User } from '../db/User';
 import { buildEmbed, makeButtonRow } from '../utils';
 import { checkTargetChannel } from './guild';
 
@@ -64,4 +64,23 @@ export const noticeCounts = async (interaction: ButtonInteraction) => {
 
 const name = ({ guild, user }: RepliableInteraction) => {
   return guild?.members.cache.get(user.id)?.displayName ?? user.username;
+};
+
+export const sendTotalResult = async (interaction: RepliableInteraction) => {
+  if ((await checkTargetChannel(interaction)) === null) {
+    return;
+  }
+  const allUsers = await User.findMany();
+  type Count = { [key in keyof typeof omikuji]: number };
+  const counts = Object.fromEntries(Object.keys(omikuji).map((l) => [l, 0])) as Count;
+  allUsers.forEach(({ result }) => Object.values(result).forEach((luck) => counts[luck]++));
+  const total = Object.values(counts).reduce((pre, cur) => pre + cur, 0);
+  const title = `今までの全${total}回のおみくじは何が出たかなー？`;
+  type CountEntry = [keyof typeof omikuji, number];
+  const description = (Object.entries(counts) as CountEntry[])
+    .filter(([, count]) => count > 0)
+    .map(([luck, count]) => `${omikuji[luck]}: ${count}回`)
+    .join('\n');
+  const embeds = [buildEmbed(title, description, 'info')];
+  await interaction.reply({ embeds });
 };

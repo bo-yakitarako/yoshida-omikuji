@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { Model } from './Model';
 
-const omikuji = {
+export const omikuji = {
   yoshida: '吉田',
   daikichi: '大吉',
   chukichi: '中吉',
@@ -10,7 +10,7 @@ const omikuji = {
   suekichi: '末吉',
   kyo: '凶',
   daikyo: '大凶',
-} as const;
+};
 const percentages = [1, 10, 30, 45, 60, 70, 90, 101] as const;
 type Omikuji = keyof typeof omikuji;
 
