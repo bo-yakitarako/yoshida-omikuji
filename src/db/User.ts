@@ -30,6 +30,10 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
     if (today in this.result) {
       return { omikuji: omikuji[this.result[today]], success: false };
     }
+    if (this.discordId === process.env.YOSHIDA_USER_ID) {
+      await this.update({ result: { ...this.result, [today]: 'yoshida' } });
+      return { omikuji: '吉田', success: true };
+    }
     const omikujiKeys = Object.keys(omikuji) as Omikuji[];
     const random = Math.floor(Math.random() * 100);
     const keyIndex = percentages.findIndex((p) => p > random);
