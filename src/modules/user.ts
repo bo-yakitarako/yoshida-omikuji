@@ -42,7 +42,10 @@ export const checkCounts = async (interaction: RepliableInteraction) => {
     return;
   }
   const content = '吉田は何回出たかなー？\nみんなに共有する場合はボタンを押してね';
-  const embeds = [buildEmbed(`${name(interaction)}くんの軌跡`, user.buildCountDescription())];
+  const count = `(全${Object.keys(user.result).length}回)`;
+  const embeds = [
+    buildEmbed(`${name(interaction)}くんの軌跡${count}`, user.buildCountDescription()),
+  ];
   await interaction.reply({ content, embeds, components: [makeButtonRow('noticeCounts')], flags });
 };
 
@@ -58,7 +61,10 @@ export const noticeCounts = async (interaction: ButtonInteraction) => {
   await interaction.deferUpdate();
   const discordId = interaction.user.id;
   const user = (await User.find({ discordId }))!;
-  const embeds = [buildEmbed(`${name(interaction)}くんの軌跡`, user.buildCountDescription())];
+  const count = `(全${Object.keys(user.result).length}回)`;
+  const embeds = [
+    buildEmbed(`${name(interaction)}くんの軌跡${count}`, user.buildCountDescription()),
+  ];
   await (interaction.channel as TextChannel).send({ embeds });
 };
 

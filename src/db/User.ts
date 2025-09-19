@@ -43,9 +43,13 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
   }
 
   public buildCountDescription() {
+    const totalCount = Object.keys(this.result).length;
     return (Object.entries(this.drawCount) as [Omikuji, number][])
       .filter(([, count]) => count > 0)
-      .map(([luck, count]) => `${omikuji[luck]}: ${count}回`)
+      .map(
+        ([luck, count]) =>
+          `${omikuji[luck]}: ${count}回 (${((count / totalCount) * 100).toFixed(0)}%)`,
+      )
       .join('\n');
   }
 
