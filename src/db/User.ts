@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { Model } from './Model';
 
 export const omikuji = {
+  kira: '吉良吉影',
   yoshida: '吉田',
   daikichi: '大吉',
   chukichi: '中吉',
@@ -11,7 +12,7 @@ export const omikuji = {
   kyo: '凶',
   daikyo: '大凶',
 };
-const percentages = [1, 10, 30, 45, 60, 70, 90, 101] as const;
+const percentages = [3, 10, 100, 300, 450, 600, 700, 900, 1001] as const;
 type Omikuji = keyof typeof omikuji;
 
 export class User extends Model<{ discordId: string; result: { [key: string]: Omikuji } }> {
@@ -35,7 +36,7 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
       return { omikuji: '吉田', success: true };
     }
     const omikujiKeys = Object.keys(omikuji) as Omikuji[];
-    const random = Math.floor(Math.random() * 100);
+    const random = Math.floor(Math.random() * 1000);
     const keyIndex = percentages.findIndex((p) => p > random);
     const result = { ...this.result, [today]: omikujiKeys[keyIndex] };
     await this.update({ result });
