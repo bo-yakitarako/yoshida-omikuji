@@ -82,14 +82,15 @@ export const shareCalendar = async (interaction: ButtonInteraction) => {
     await interaction.reply({ content: '画像が見つからないよ', flags });
     return;
   }
+  await interaction.deferUpdate();
   const response = await fetch(originalAttachment.url);
+  await interaction.deleteReply();
   const buffer = Buffer.from(await response.arrayBuffer());
   const newAttachment = new AttachmentBuilder(buffer, { name: 'calendar.png' });
   const iconURL = member.displayAvatarURL();
   const embed = new EmbedBuilder()
     .setAuthor({ name: `${member.displayName}くんのカレンダー`, iconURL })
-    .setImage('attachment://calendar.png') // 添付ファイルを参照
+    .setImage('attachment://calendar.png')
     .setColor(0x53fc94);
   await channel.send({ embeds: [embed], files: [newAttachment] });
-  await interaction.update({ content: '共有したよー！', components: [], attachments: [] });
 };
