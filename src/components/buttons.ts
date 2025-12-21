@@ -1,5 +1,6 @@
 import { ButtonBuilder, ButtonInteraction, ButtonStyle } from 'discord.js';
 import * as user from '../modules/user';
+import * as calendar from '../modules/calendar';
 
 const registration = {
   draw: {
@@ -20,6 +21,15 @@ const registration = {
       await user.checkCounts(interaction);
     },
   },
+  calendar: {
+    component: new ButtonBuilder()
+      .setCustomId('calendar')
+      .setLabel('カレンダー見ちゃおっかな')
+      .setStyle(ButtonStyle.Secondary),
+    async execute(interaction: ButtonInteraction) {
+      await calendar.callCalendarSelections(interaction);
+    },
+  },
   todayResult: {
     component: new ButtonBuilder()
       .setCustomId('todayResult')
@@ -38,6 +48,15 @@ const registration = {
       await user.noticeCounts(interaction);
     },
   },
+  shareCalendar: {
+    component: new ButtonBuilder()
+      .setCustomId('shareCalendar')
+      .setLabel('このカレンダーを見せびらかしちゃう')
+      .setStyle(ButtonStyle.Secondary),
+    async execute(interaction: ButtonInteraction) {
+      await calendar.shareCalendar(interaction);
+    },
+  },
 };
 
 type CustomId = keyof typeof registration;
@@ -47,6 +66,14 @@ export const button = Object.fromEntries(
 ) as { [key in CustomId]: ButtonBuilder };
 
 export const buttonInteraction = async (interaction: ButtonInteraction) => {
-  const customId = interaction.customId as CustomId;
-  await registration[customId].execute(interaction);
+  const customId = interaction.customId;
+  if (['year', 'month'].some((prefix) => customId.startsWith(prefix))) {
+    if (customId.startsWith('year')) {
+      await calendar.selectYear(interaction);
+    } else {
+      await calendar.selectMonth(interaction);
+    }
+    return;
+  }
+  await registration[customId as CustomId].execute(interaction);
 };

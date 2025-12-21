@@ -3,3 +3,5 @@
 /.vscode/sftp.json
 .env
 node_modules
+holidays.json
+test_calendar.png

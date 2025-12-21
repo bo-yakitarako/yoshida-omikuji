@@ -166,7 +166,7 @@ const messages = [
 export const sendNotices = async (client: Client) => {
   const noticeChannels = await NoticeChannel.findMany();
   const content = messages[Math.floor(Math.random() * messages.length)];
-  const components = [makeButtonRow('draw', 'checkCounts')];
+  const components = [makeButtonRow('draw', 'checkCounts', 'calendar')];
   for (const { guildId, channelId } of noticeChannels) {
     const guild = await client.guilds.fetch(guildId);
     const channel = await guild?.channels.fetch(channelId);
@@ -180,7 +180,7 @@ export const sendNoticeManually = async (interaction: ChatInputCommandInteractio
   if ((await checkTargetChannel(interaction)) === null) {
     return;
   }
-  const components = [makeButtonRow('draw', 'checkCounts')];
+  const components = [makeButtonRow('draw', 'checkCounts', 'calendar')];
   await interaction.reply({ content: '明日の自動通知なんて待ってらんねえぜ', components });
 };
 

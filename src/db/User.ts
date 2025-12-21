@@ -13,7 +13,7 @@ export const omikuji = {
   daikyo: '大凶',
 };
 const percentages = [3, 10, 100, 300, 450, 600, 700, 900, 1001] as const;
-type Omikuji = keyof typeof omikuji;
+export type Omikuji = keyof typeof omikuji;
 
 export class User extends Model<{ discordId: string; result: { [key: string]: Omikuji } }> {
   protected static _collectionName = 'users';

@@ -6,6 +6,7 @@ import {
 } from 'discord.js';
 import * as guild from '../modules/guild';
 import * as user from '../modules/user';
+import * as calendar from '../modules/calendar';
 
 const flags = MessageFlags.Ephemeral;
 
@@ -44,6 +45,12 @@ const registration = {
     data: new SlashCommandBuilder().setName('total').setDescription('今までの全おみくじを見るよ'),
     execute: async (interaction: ChatInputCommandInteraction) => {
       await user.sendTotalResult(interaction);
+    },
+  },
+  calendar: {
+    data: new SlashCommandBuilder().setName('calendar').setDescription('おみくじカレンダーなのだ'),
+    execute: async (interaction: ChatInputCommandInteraction) => {
+      await calendar.callCalendarSelections(interaction);
     },
   },
 };
