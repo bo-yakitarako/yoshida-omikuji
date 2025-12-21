@@ -54,6 +54,25 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
       .join('\n');
   }
 
+  public buildSequenceCountFields() {
+    const count = this.sequenceCount;
+    if (count === 0) {
+      return [];
+    }
+    return [{ name: 'なんと今...', value: `**${count}日**連続おみくじ継続中！`, inline: false }];
+  }
+
+  private get sequenceCount() {
+    const days = Object.keys(this.result).reverse();
+    if (days.length === 0 || !dayjs(days[0]).isSame(dayjs(), 'date')) {
+      return 0;
+    }
+    const count = days.findIndex(
+      (day, i, array) => !dayjs(day).isSame(dayjs(array[i + 1]).add(1, 'day'), 'date'),
+    );
+    return count === 0 ? 0 : count + 1;
+  }
+
   private get drawCount() {
     type Count = { [key in Omikuji]: number };
     const count = Object.fromEntries(Object.keys(omikuji).map((l) => [l, 0])) as Count;
