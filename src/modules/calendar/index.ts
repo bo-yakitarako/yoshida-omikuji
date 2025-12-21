@@ -44,7 +44,7 @@ export const selectMonth = async (interaction: ButtonInteraction) => {
   const [year, month] = interaction.customId.split('-').slice(1).map(Number);
   const image = await generateCalendar(year, month, user.result);
   const attachment = new AttachmentBuilder(image, { name: 'calendar.png' });
-  const content = `${year}/${month} のやつだねー。共有するならボタンを押してねー`;
+  const content = `共有するならボタンを押してねー`;
   const components = [makeButtonRow('shareCalendar')];
   await interaction.update({ content, files: [attachment], components });
 };
@@ -64,16 +64,12 @@ export const generateDurationButtons = (user: User, year?: number) => {
   return monthRows;
 };
 
-const extractDurations = (user: User, year?: number) => {
-  const days = Object.keys(user.result);
-  const prefix = year === undefined ? '' : `${year}`;
-  const durationIndex = year === undefined ? 0 : 1;
-  return days
-    .filter((day) => day.startsWith(prefix))
-    .map((day) => day.split('-')[durationIndex])
+const extractDurations = (user: User, year?: number) =>
+  Object.keys(user.result)
+    .filter((day) => day.startsWith(year === undefined ? '' : `${year}`))
+    .map((day) => day.split('-')[year === undefined ? 0 : 1])
     .filter((day, index, self) => self.indexOf(day) === index)
     .map(Number);
-};
 
 export const shareCalendar = async (interaction: ButtonInteraction) => {
   const { channel, member, message } = interaction;
@@ -89,10 +85,9 @@ export const shareCalendar = async (interaction: ButtonInteraction) => {
   const response = await fetch(originalAttachment.url);
   const buffer = Buffer.from(await response.arrayBuffer());
   const newAttachment = new AttachmentBuilder(buffer, { name: 'calendar.png' });
-  const displayName = member.displayName;
-  const avatarUrl = member.displayAvatarURL();
+  const iconURL = member.displayAvatarURL();
   const embed = new EmbedBuilder()
-    .setAuthor({ name: `${displayName}くんのカレンダー`, iconURL: avatarUrl })
+    .setAuthor({ name: `${member.displayName}くんのカレンダー`, iconURL })
     .setImage('attachment://calendar.png') // 添付ファイルを参照
     .setColor(0x53fc94);
   await channel.send({ embeds: [embed], files: [newAttachment] });
