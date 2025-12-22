@@ -44,24 +44,24 @@ export const selectMonth = async (interaction: ButtonInteraction) => {
   const [year, month] = interaction.customId.split('-').slice(1).map(Number);
   const image = await generateCalendar(year, month, user.result);
   const attachment = new AttachmentBuilder(image, { name: 'calendar.png' });
-  const content = `共有するならボタンを押してねー`;
+  const content = '共有するならボタンを押してねー';
   const components = [makeButtonRow('shareCalendar')];
   await interaction.update({ content, files: [attachment], components });
 };
 
 export const generateDurationButtons = (user: User, year?: number) => {
-  const monthRows: ActionRowBuilder<ButtonBuilder>[] = [];
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
   for (const duration of extractDurations(user, year)) {
-    if (monthRows.length === 0 || monthRows[monthRows.length - 1].components.length === 5) {
-      monthRows.push(new ActionRowBuilder<ButtonBuilder>());
+    if (rows.length === 0 || rows[rows.length - 1].components.length === 5) {
+      rows.push(new ActionRowBuilder<ButtonBuilder>());
     }
     const component = new ButtonBuilder()
       .setCustomId(`${year === undefined ? 'year' : `month-${year}`}-${duration}`)
       .setLabel(`${duration}${year === undefined ? '年' : '月'}`)
       .setStyle(ButtonStyle.Primary);
-    monthRows[monthRows.length - 1].addComponents(component);
+    rows[rows.length - 1].addComponents(component);
   }
-  return monthRows;
+  return rows;
 };
 
 const extractDurations = (user: User, year?: number) =>
