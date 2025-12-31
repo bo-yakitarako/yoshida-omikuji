@@ -6,8 +6,11 @@ import {
   RepliableInteraction,
   TextChannel,
 } from 'discord.js';
+import { Filter } from 'mongodb';
+import dayjs from 'dayjs';
+import { User } from '../db/User';
 import { NoticeChannel } from '../db/NoticeChannel';
-import { makeButtonRow } from '../utils';
+import { buildEmbed, makeButtonRow } from '../utils';
 
 const flags = MessageFlags.Ephemeral;
 
@@ -167,13 +170,51 @@ export const sendNotices = async (client: Client) => {
   const noticeChannels = await NoticeChannel.findMany();
   const content = messages[Math.floor(Math.random() * messages.length)];
   const components = [makeButtonRow('draw', 'checkCounts', 'calendar')];
+  const embeds = await buildNewYearEmbeds();
   for (const { guildId, channelId } of noticeChannels) {
     const guild = await client.guilds.fetch(guildId);
     const channel = await guild?.channels.fetch(channelId);
     if (channel instanceof TextChannel) {
-      await channel.send({ content, components });
+      await channel.send({ content, embeds, components });
     }
   }
+};
+
+const buildNewYearEmbeds = async () => {
+  const today = dayjs();
+  if (today.month() !== 0 || today.date() !== 1) {
+    return undefined;
+  }
+  const title = '新年明けましておめでとうございます:bamboo:';
+  const newYear = today.year();
+  const prevYear = newYear - 1;
+  const allUsers = await User.findMany({
+    $expr: {
+      $gt: [
+        {
+          $size: {
+            $filter: {
+              input: { $objectToArray: '$result' },
+              as: 'item',
+              cond: { $regexMatch: { input: '$$item.k', regex: `^${prevYear}` } },
+            },
+          },
+        },
+        0,
+      ],
+    },
+  } as Filter<{
+    discordId: string;
+    result: { [key: string]: string };
+    createdAt: number;
+    updatedAt: number;
+  }>);
+  const count = allUsers.reduce((pre, cur) => {
+    const userDraws = Object.keys(cur.result).filter((key) => key.startsWith(prevYear.toString()));
+    return pre + userDraws.length;
+  }, 0);
+  const description = `${prevYear}年は全部で**${allUsers.length}人**の方が**${count}回**のおみくじを引いてくれました\n\nせっかく作ったものは使ってもらわないと泣いちゃうけど、こんだけみんなハマってくれるとは思わなくて、吉田を愛してくれてありがとうになりました。仲間がいる"よ!!!!\n\n吉田が出た方も出なかった方もいるかと思いますが${newYear}年もどうぞご贔屓ください\nみんなが引いてくれるのを見るたびしんにじえもは元気になります\n\nそういえばここだけの話、**吉田より確率の低いシークレット運勢**がどうやらあるようで...\n果たして誰が最初に引いてくれるんでしょうか`;
+  return [buildEmbed(title, description)];
 };
 
 export const sendNoticeManually = async (interaction: ChatInputCommandInteraction) => {
