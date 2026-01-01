@@ -7,5 +7,5 @@ services:
       TOKEN: ${TOKEN}
       CLIENT_ID: ${CLIENT_ID}
       YOSHIDA_USER_ID: ${YOSHIDA_USER_ID}
-      MONGODB_URI: ${MONGODB_URI}
+      MONGO_URI: ${MONGO_URI}
       DB_NAME: ${DB_NAME}
