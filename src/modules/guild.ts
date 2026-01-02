@@ -173,7 +173,7 @@ export const sendNotices = async (client: Client) => {
   const embeds = await buildNewYearEmbeds();
   for (const { guildId, channelId } of noticeChannels) {
     const guild = await client.guilds.fetch(guildId);
-    const channel = await guild?.channels.fetch(channelId);
+    const channel = await guild?.channels?.fetch(channelId);
     if (channel instanceof TextChannel) {
       await channel.send({ content, embeds, components });
     }
