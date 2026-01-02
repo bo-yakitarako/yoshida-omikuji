@@ -7,9 +7,9 @@
         "start": "node ./dist/index.js",
         "dev": "nodemon -L",
         "lint": "eslint --fix **/*.ts",
-        "build": "esbuild src/main.ts --bundle --minify --platform=node --outfile=dist/index.js --external:discord.js --external:dotenv --external:mongodb --external:dayjs --external:@napi-rs/canvas",
+        "build-main": "esbuild src/main.ts --bundle --minify --platform=node --outfile=dist/index.js --external:discord.js --external:dotenv --external:mongodb --external:dayjs --external:@napi-rs/canvas",
         "build-notice": "esbuild src/notice.ts --bundle --minify --platform=node --outfile=dist/notice.js --external:discord.js --external:dotenv --external:mongodb --external:dayjs --external:@napi-rs/canvas",
-        "build-test": "esbuild src/test.ts --bundle --minify --platform=node --outfile=dist/test.js --external:discord.js --external:dotenv --external:dayjs"
+        "build": "pnpm build-main && pnpm build-notice"
     },
     "author": "bo-yakitarako",
     "license": "MIT",
