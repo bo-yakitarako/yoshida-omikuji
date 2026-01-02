@@ -9,3 +9,4 @@ services:
       YOSHIDA_USER_ID: ${YOSHIDA_USER_ID}
       MONGO_URI: ${MONGO_URI}
       DB_NAME: ${DB_NAME}
+      TZ: Asia/Tokyo
