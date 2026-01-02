@@ -9,4 +9,5 @@ services:
       YOSHIDA_USER_ID: ${YOSHIDA_USER_ID}
       MONGO_URI: ${MONGO_URI}
       DB_NAME: ${DB_NAME}
-      TZ: Asia/Tokyo
+      TEST_GUILD_ID: ${TEST_GUILD_ID}
+      TEST_CHANNEL_ID: ${TEST_CHANNEL_ID}
