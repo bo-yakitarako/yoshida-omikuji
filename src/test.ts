@@ -12,7 +12,8 @@ client.on(Events.ClientReady, async (client) => {
   const guildId = process.env.TEST_GUILD_ID ?? '';
   const channelId = process.env.TEST_CHANNEL_ID ?? '';
   const guild = await client.guilds.fetch(guildId);
-  const channel = await guild?.channels.fetch(channelId);
+  const channel = await guild?.channels?.fetch(channelId);
+  console.log({ guildId, channelId, guild: guild?.name, channel: channel?.name });
   if (channel instanceof TextChannel) {
     await channel.send(dayjs().format());
   }
