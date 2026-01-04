@@ -12,4 +12,4 @@ services:
       TEST_GUILD_ID: ${TEST_GUILD_ID}
       TEST_CHANNEL_ID: ${TEST_CHANNEL_ID}
     volumes:
-      - ${HOLIDAYS_PATH}:/app/holidays.json
+      - /home/shinnijiemo/bot/holidays.json:/app/holidays.json
