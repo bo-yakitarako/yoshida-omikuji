@@ -11,3 +11,5 @@ services:
       DB_NAME: ${DB_NAME}
       TEST_GUILD_ID: ${TEST_GUILD_ID}
       TEST_CHANNEL_ID: ${TEST_CHANNEL_ID}
+    volumes:
+      - ${HOLIDAYS_PATH}:/app/holidays.json
