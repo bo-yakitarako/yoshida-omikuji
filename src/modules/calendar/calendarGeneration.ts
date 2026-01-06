@@ -100,6 +100,7 @@ export const generateCalendar = async (
     ctx.strokeText(String(day), x + GRID.cellSize - gap, y + gap);
     ctx.fillStyle = getDayColor(dayOfWeek, holidays.includes(day));
     ctx.fillText(String(day), x + GRID.cellSize - gap, y + gap);
+    console.log(ctx.fillStyle, day, x, y);
 
     const omikujiKey = days[dateStr];
     if (omikujiKey) {
