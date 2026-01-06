@@ -1,8 +1,9 @@
 FROM node:23-alpine AS build
 
-RUN apk add --no-cache tzdata && \
+RUN apk add --no-cache tzdata fontconfig ttf-dejavu ttf-liberation && \
   cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && \
-  echo "Asia/Tokyo" > /etc/timezone
+  echo "Asia/Tokyo" > /etc/timezone && \
+  fc-cache -fv
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
