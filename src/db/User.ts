@@ -1,5 +1,7 @@
 import dayjs from 'dayjs';
 import { Model } from './Model';
+import { RepliableInteraction } from 'discord.js';
+import { buildEmbed, memberInfo } from '../utils';
 
 export const omikuji = {
   kira: '吉良吉影',
@@ -43,7 +45,15 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
     return { omikuji: omikuji[omikujiKeys[keyIndex]], success: true };
   }
 
-  public buildCountDescription() {
+  public buildCountEmged(interaction: RepliableInteraction) {
+    const count = `(全${Object.keys(this.result).length}回)`;
+    const author = memberInfo(interaction, (name) => `${name}くんの軌跡${count}`);
+    const description = this.buildCountDescription();
+    const fields = this.buildSequenceCountFields();
+    return buildEmbed(author, description, fields);
+  }
+
+  private buildCountDescription() {
     const totalCount = Object.keys(this.result).length;
     return (Object.entries(this.drawCount) as [Omikuji, number][])
       .filter(([, count]) => count > 0)
@@ -54,7 +64,7 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
       .join('\n');
   }
 
-  public buildSequenceCountFields() {
+  private buildSequenceCountFields() {
     const count = this.sequenceCount;
     if (count === 0) {
       return [];

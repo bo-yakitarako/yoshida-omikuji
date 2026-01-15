@@ -1,6 +1,6 @@
 import { ButtonInteraction, MessageFlags, RepliableInteraction, TextChannel } from 'discord.js';
 import { omikuji, User } from '../db/User';
-import { buildEmbed, makeButtonRow } from '../utils';
+import { buildEmbed, makeButtonRow, memberInfo } from '../utils';
 import { checkTargetChannel } from './guild';
 
 const flags = MessageFlags.Ephemeral;
@@ -22,7 +22,8 @@ export const draw = async (interaction: RepliableInteraction) => {
     await interaction.reply({ content, components, flags });
     return;
   }
-  const embeds = [buildEmbed(`${name(interaction)}くんの今日の運勢`, omikuji)];
+  const author = memberInfo(interaction, (name) => `${name}くんの今日の運勢`);
+  const embeds = [buildEmbed(author, omikuji)];
   if (interaction.isButton()) {
     await interaction.deferUpdate();
     await target.send({ embeds });
@@ -42,42 +43,27 @@ export const checkCounts = async (interaction: RepliableInteraction) => {
     return;
   }
   const content = '吉田は何回出たかなー？\nみんなに共有する場合はボタンを押してね';
-  const count = `(全${Object.keys(user.result).length}回)`;
-  const embeds = [
-    buildEmbed(
-      `${name(interaction)}くんの軌跡${count}`,
-      user.buildCountDescription(),
-      user.buildSequenceCountFields(),
-    ),
-  ];
+  const embeds = [user.buildCountEmged(interaction)];
   await interaction.reply({ content, embeds, components: [makeButtonRow('noticeCounts')], flags });
 };
 
 export const displayTodayResult = async (interaction: ButtonInteraction) => {
   await interaction.deferUpdate();
+  await interaction.deleteReply();
   const discordId = interaction.user.id;
   const user = (await User.find({ discordId }))!;
-  const embeds = [buildEmbed(`${name(interaction)}くんの今日の運勢`, user.todayOmikuji)];
+  const author = memberInfo(interaction, (name) => `${name}くんの今日の運勢`);
+  const embeds = [buildEmbed(author, user.todayOmikuji)];
   await (interaction.channel as TextChannel).send({ embeds });
 };
 
 export const noticeCounts = async (interaction: ButtonInteraction) => {
   await interaction.deferUpdate();
+  await interaction.deleteReply();
   const discordId = interaction.user.id;
   const user = (await User.find({ discordId }))!;
-  const count = `(全${Object.keys(user.result).length}回)`;
-  const embeds = [
-    buildEmbed(
-      `${name(interaction)}くんの軌跡${count}`,
-      user.buildCountDescription(),
-      user.buildSequenceCountFields(),
-    ),
-  ];
+  const embeds = [user.buildCountEmged(interaction)];
   await (interaction.channel as TextChannel).send({ embeds });
-};
-
-const name = ({ guild, user }: RepliableInteraction) => {
-  return guild?.members.cache.get(user.id)?.displayName ?? user.username;
 };
 
 export const sendTotalResult = async (interaction: RepliableInteraction) => {

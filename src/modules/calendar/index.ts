@@ -4,7 +4,6 @@ import {
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
-  EmbedBuilder,
   GuildMember,
   MessageFlags,
   RepliableInteraction,
@@ -12,7 +11,7 @@ import {
 } from 'discord.js';
 import { User } from '../../db/User';
 import { generateCalendar } from './calendarGeneration';
-import { makeButtonRow } from '../../utils';
+import { buildEmbed, makeButtonRow, memberInfo } from '../../utils';
 import { checkTargetChannel } from '../guild';
 
 const flags = MessageFlags.Ephemeral;
@@ -87,10 +86,7 @@ export const shareCalendar = async (interaction: ButtonInteraction) => {
   await interaction.deleteReply();
   const buffer = Buffer.from(await response.arrayBuffer());
   const newAttachment = new AttachmentBuilder(buffer, { name: 'calendar.png' });
-  const iconURL = member.displayAvatarURL();
-  const embed = new EmbedBuilder()
-    .setAuthor({ name: `${member.displayName}くんのカレンダー`, iconURL })
-    .setImage('attachment://calendar.png')
-    .setColor(0x53fc94);
+  const author = memberInfo(interaction, (name) => `${name}くんのカレンダー`);
+  const embed = buildEmbed(author, '', 'success').setImage('attachment://calendar.png');
   await channel.send({ embeds: [embed], files: [newAttachment] });
 };

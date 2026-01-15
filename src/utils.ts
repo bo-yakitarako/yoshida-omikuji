@@ -1,5 +1,23 @@
-import { ActionRowBuilder, ButtonBuilder, EmbedBuilder, EmbedField } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  EmbedAuthorOptions as Author,
+  EmbedBuilder,
+  EmbedField,
+  GuildMember,
+  RepliableInteraction,
+} from 'discord.js';
 import { button } from './components/buttons';
+
+type NameArrange = (name: string) => string;
+export const memberInfo = ({ member, user }: RepliableInteraction, nameArrange?: NameArrange) => {
+  if (member instanceof GuildMember) {
+    const name = nameArrange ? nameArrange(member.displayName) : member.displayName;
+    return { name, iconURL: member.displayAvatarURL() };
+  }
+  const name = nameArrange ? nameArrange(user.username) : user.username;
+  return { name, iconURL: user.displayAvatarURL() };
+};
 
 type ButtonKey = keyof typeof button;
 export const makeButtonRow = (...buttonKeys: ButtonKey[]) => {
@@ -28,7 +46,26 @@ export function buildEmbed(
   fields: EmbedField[],
   color: ColorKey,
 ): EmbedBuilder;
-export function buildEmbed(title: string, ...params: DescriptionParams | FieldsParams | AllParams) {
+export function buildEmbed(author: Author, description: string): EmbedBuilder;
+export function buildEmbed(author: Author, description: string, color: ColorKey): EmbedBuilder;
+export function buildEmbed(author: Author, description: string, fields: EmbedField[]): EmbedBuilder;
+export function buildEmbed(
+  author: Author,
+  description: string,
+  fields: EmbedField[],
+  color: ColorKey,
+): EmbedBuilder;
+export function buildEmbed(author: Author, description: string, fields: EmbedField[]): EmbedBuilder;
+export function buildEmbed(
+  author: Author,
+  description: string,
+  fields: EmbedField[],
+  color: ColorKey,
+): EmbedBuilder;
+export function buildEmbed(
+  title: string | Author,
+  ...params: DescriptionParams | FieldsParams | AllParams
+) {
   let description = '';
   let fields: EmbedField[] = [];
   let color: ColorKey = 'success';
@@ -49,7 +86,11 @@ export function buildEmbed(title: string, ...params: DescriptionParams | FieldsP
     }
   }
   const embed = new EmbedBuilder();
-  embed.setTitle(title);
+  if (typeof title === 'string') {
+    embed.setTitle(title);
+  } else {
+    embed.setAuthor(title);
+  }
   embed.setColor(colors[color]);
   if (description) {
     embed.setDescription(description);
