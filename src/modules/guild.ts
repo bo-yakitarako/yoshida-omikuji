@@ -1,6 +1,7 @@
 import {
   ChatInputCommandInteraction,
   Client,
+  DiscordAPIError,
   MessageFlags,
   PermissionsBitField,
   RepliableInteraction,
@@ -171,11 +172,24 @@ export const sendNotices = async (client: Client) => {
   const content = messages[Math.floor(Math.random() * messages.length)];
   const components = [makeButtonRow('draw', 'checkCounts', 'calendar')];
   const embeds = await buildNewYearEmbeds();
-  for (const { guildId, channelId } of noticeChannels) {
-    const guild = await client.guilds.fetch(guildId);
-    const channel = await guild?.channels?.fetch(channelId);
-    if (channel instanceof TextChannel) {
+  for (const noticeChannel of noticeChannels) {
+    const { guildId, channelId } = noticeChannel;
+    try {
+      const guild = await client.guilds.fetch(guildId);
+      const channel = (await guild.channels.fetch(channelId)) as TextChannel;
       await channel.send({ content, embeds, components });
+    } catch (error) {
+      await noticeChannel.delete();
+      if (!(error instanceof DiscordAPIError)) {
+        return;
+      }
+      if (error.message.includes('Unknown Guild')) {
+        console.log(`ID:${guildId}のサーバーは参加してないぽいから削除したよ`);
+      } else {
+        console.log(
+          `ID:${guildId}のサーバーのID:${channelId}のチャンネルは無くなってるみたいだから連携は削除したよ`,
+        );
+      }
     }
   }
 };
