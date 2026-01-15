@@ -67,11 +67,13 @@ export const button = Object.fromEntries(
 
 export const buttonInteraction = async (interaction: ButtonInteraction) => {
   const customId = interaction.customId;
-  if (['year', 'month'].some((prefix) => customId.startsWith(prefix))) {
+  if (['year', 'month', 'shareMonthCounts'].some((prefix) => customId.startsWith(prefix))) {
     if (customId.startsWith('year')) {
       await calendar.selectYear(interaction);
-    } else {
+    } else if (customId.startsWith('month')) {
       await calendar.selectMonth(interaction);
+    } else {
+      await user.shareMonthCounts(interaction);
     }
     return;
   }

@@ -1,7 +1,16 @@
-import { ButtonInteraction, MessageFlags, RepliableInteraction, TextChannel } from 'discord.js';
+import {
+  ButtonBuilder,
+  ButtonInteraction,
+  ButtonStyle,
+  ChatInputCommandInteraction,
+  MessageFlags,
+  RepliableInteraction,
+  TextChannel,
+} from 'discord.js';
 import { omikuji, User } from '../db/User';
 import { buildEmbed, makeButtonRow, memberInfo } from '../utils';
 import { checkTargetChannel } from './guild';
+import dayjs from 'dayjs';
 
 const flags = MessageFlags.Ephemeral;
 
@@ -45,6 +54,42 @@ export const checkCounts = async (interaction: RepliableInteraction) => {
   const content = '吉田は何回出たかなー？\nみんなに共有する場合はボタンを押してね';
   const embeds = [user.buildCountEnbed(interaction)];
   await interaction.reply({ content, embeds, components: [makeButtonRow('noticeCounts')], flags });
+};
+
+export const checkMonthCounts = async (interaction: ChatInputCommandInteraction) => {
+  if ((await checkTargetChannel(interaction)) === null) {
+    return;
+  }
+  const discordId = interaction.user.id;
+  const user = await User.find({ discordId });
+  if (user === null) {
+    await interaction.reply({ content: '1回占ってこようねー', flags });
+    return;
+  }
+  const today = dayjs();
+  const year = interaction.options.getNumber('year') ?? today.year();
+  const month = interaction.options.getNumber('month') ?? today.month() + 1;
+  const embed = user.buildMonthCountEmbed(interaction, year, month);
+  if (embed === null) {
+    await interaction.reply({ content: 'その月は占っていないよ', flags });
+    return;
+  }
+  const shareButton = new ButtonBuilder()
+    .setCustomId(`shareMonthCounts-${year}-${month}`)
+    .setLabel(`${year}年${month}月の軌跡をみんなに共有する`)
+    .setStyle(ButtonStyle.Secondary);
+  const content = `${year}年${month}月のやつだよ\nみんなに共有する場合はボタンを押してね`;
+  const components = [makeButtonRow(shareButton)];
+  await interaction.reply({ content, embeds: [embed], components, flags });
+};
+
+export const shareMonthCounts = async (interaction: ButtonInteraction) => {
+  const [year, month] = interaction.customId.split('-').slice(1).map(Number);
+  const user = (await User.find({ discordId: interaction.user.id }))!;
+  const embed = user.buildMonthCountEmbed(interaction, year, month);
+  await interaction.deferUpdate();
+  await interaction.deleteReply();
+  await (interaction.channel as TextChannel).send({ embeds: [embed] });
 };
 
 export const displayTodayResult = async (interaction: ButtonInteraction) => {

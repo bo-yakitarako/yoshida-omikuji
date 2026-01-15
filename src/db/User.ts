@@ -1,6 +1,11 @@
 import dayjs from 'dayjs';
 import { Model } from './Model';
-import { RepliableInteraction } from 'discord.js';
+import {
+  ButtonInteraction,
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+  RepliableInteraction,
+} from 'discord.js';
 import { buildEmbed, memberInfo } from '../utils';
 
 export const omikuji = {
@@ -54,8 +59,12 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
   }
 
   private buildCountDescription() {
-    const totalCount = Object.keys(this.result).length;
-    return (Object.entries(this.drawCount) as [Omikuji, number][])
+    return this.convertToCountDescription(this.result);
+  }
+
+  private convertToCountDescription(result: { [key: string]: Omikuji }) {
+    const totalCount = Object.keys(result).length;
+    return (Object.entries(this.convertToDrawCount(result)) as [Omikuji, number][])
       .filter(([, count]) => count > 0)
       .map(
         ([luck, count]) =>
@@ -83,15 +92,40 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
     return count === 0 ? 0 : count + 1;
   }
 
-  private get drawCount() {
+  private convertToDrawCount(result: { [key: string]: Omikuji }) {
     type Count = { [key in Omikuji]: number };
     const count = Object.fromEntries(Object.keys(omikuji).map((l) => [l, 0])) as Count;
-    Object.values(this.result).forEach((luck) => count[luck]++);
+    Object.values(result).forEach((luck) => count[luck]++);
     return count;
   }
 
   public get todayOmikuji() {
     const today = dayjs().format('YYYY-MM-DD');
     return omikuji[this.result[today]];
+  }
+
+  public buildMonthCountEmbed(
+    interaction: ChatInputCommandInteraction,
+    year: number,
+    month: number,
+  ): EmbedBuilder | null;
+  public buildMonthCountEmbed(
+    interaction: ButtonInteraction,
+    year: number,
+    month: number,
+  ): EmbedBuilder;
+  public buildMonthCountEmbed(interaction: RepliableInteraction, year: number, month: number) {
+    const prefix = `${year}-${String(month).padStart(2, '0')}`;
+    const monthResult = Object.fromEntries(
+      Object.entries(this.result).filter(([key]) => key.startsWith(prefix)),
+    );
+    if (Object.keys(monthResult).length === 0) {
+      return null;
+    }
+    const count = `(全${Object.keys(monthResult).length}回)`;
+    const nameArrange = (name: string) => `${name}くんの${year}年${month}月のおみくじ回数${count}`;
+    const author = memberInfo(interaction, nameArrange);
+    const description = this.convertToCountDescription(monthResult);
+    return buildEmbed(author, description);
   }
 }

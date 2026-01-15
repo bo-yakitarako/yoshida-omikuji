@@ -20,8 +20,11 @@ export const memberInfo = ({ member, user }: RepliableInteraction, nameArrange?:
 };
 
 type ButtonKey = keyof typeof button;
-export const makeButtonRow = (...buttonKeys: ButtonKey[]) => {
-  const buttons = buttonKeys.map((key) => button[key]);
+export const makeButtonRow = (...buttonInfos: (ButtonKey | ButtonBuilder)[]) => {
+  const buttons =
+    buttonInfos.length > 0 && typeof buttonInfos[0] === 'string'
+      ? buttonInfos.map((key) => button[key as ButtonKey])
+      : (buttonInfos as ButtonBuilder[]);
   return new ActionRowBuilder<ButtonBuilder>().addComponents(buttons);
 };
 

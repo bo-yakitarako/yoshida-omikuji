@@ -41,6 +41,16 @@ const registration = {
       await user.checkCounts(interaction);
     },
   },
+  month: {
+    data: new SlashCommandBuilder()
+      .setName('month')
+      .setDescription('指定月のおみくじ回数を見るよ(指定無しは今月のやつ)')
+      .addNumberOption((option) => option.setName('year').setDescription('年'))
+      .addNumberOption((option) => option.setName('month').setDescription('月')),
+    execute: async (interaction: ChatInputCommandInteraction) => {
+      await user.checkMonthCounts(interaction);
+    },
+  },
   total: {
     data: new SlashCommandBuilder().setName('total').setDescription('今までの全おみくじを見るよ'),
     execute: async (interaction: ChatInputCommandInteraction) => {
