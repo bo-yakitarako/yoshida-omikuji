@@ -45,7 +45,7 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
     return { omikuji: omikuji[omikujiKeys[keyIndex]], success: true };
   }
 
-  public buildCountEmged(interaction: RepliableInteraction) {
+  public buildCountEnbed(interaction: RepliableInteraction) {
     const count = `(全${Object.keys(this.result).length}回)`;
     const author = memberInfo(interaction, (name) => `${name}くんの軌跡${count}`);
     const description = this.buildCountDescription();
