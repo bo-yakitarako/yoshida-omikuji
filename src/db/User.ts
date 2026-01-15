@@ -123,7 +123,7 @@ export class User extends Model<{ discordId: string; result: { [key: string]: Om
       return null;
     }
     const count = `(全${Object.keys(monthResult).length}回)`;
-    const nameArrange = (name: string) => `${name}くんの${year}年${month}月のおみくじ回数${count}`;
+    const nameArrange = (name: string) => `${name}くんの${year}年${month}月の軌跡${count}`;
     const author = memberInfo(interaction, nameArrange);
     const description = this.convertToCountDescription(monthResult);
     return buildEmbed(author, description);
