@@ -20,13 +20,15 @@ export const memberInfo = ({ member, user }: RepliableInteraction, nameArrange?:
 };
 
 type ButtonKey = keyof typeof button;
-export const makeButtonRow = (...buttonInfos: (ButtonKey | ButtonBuilder)[]) => {
+export function makeButtonRow(...buttons: ButtonBuilder[]): ActionRowBuilder<ButtonBuilder>;
+export function makeButtonRow(...buttonKeys: ButtonKey[]): ActionRowBuilder<ButtonBuilder>;
+export function makeButtonRow(...buttonInfos: (ButtonKey | ButtonBuilder)[]) {
   const buttons =
     buttonInfos.length > 0 && typeof buttonInfos[0] === 'string'
       ? buttonInfos.map((key) => button[key as ButtonKey])
       : (buttonInfos as ButtonBuilder[]);
   return new ActionRowBuilder<ButtonBuilder>().addComponents(buttons);
-};
+}
 
 const colors = {
   info: 0xe8d44f,
