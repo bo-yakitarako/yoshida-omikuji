@@ -46,6 +46,7 @@ jobs:
             dist/notice.js \
             node_modules/@napi-rs/canvas \
             node_modules/@napi-rs/canvas-linux-x64-gnu \
+            assets \
             .env \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}"
 
