@@ -1,8 +1,5 @@
 import dayjs from 'dayjs';
 import { Client, Events, GatewayIntentBits, TextChannel } from 'discord.js';
-import { config } from 'dotenv';
-
-config();
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],

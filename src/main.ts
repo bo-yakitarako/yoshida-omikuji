@@ -1,9 +1,6 @@
 import { Client, GatewayIntentBits, Events, REST, Routes } from 'discord.js';
-import { config } from 'dotenv';
 import { commands, slashCommandsInteraction } from './components/slashCommands';
 import { buttonInteraction } from './components/buttons';
-
-config();
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],

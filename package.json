@@ -4,12 +4,12 @@
     "description": "吉田は本来はyoshidaではなくkittaです",
     "main": "dist/index.js",
     "scripts": {
-        "start": "node ./dist/index.js",
-        "dev": "nodemon -L",
+        "start": "bun ./dist/index.js",
+        "dev": "bun --watch src/main.ts",
         "lint": "eslint --fix **/*.ts",
-        "build-main": "esbuild src/main.ts --bundle --minify --platform=node --outfile=dist/index.js --external:discord.js --external:dotenv --external:mongodb --external:dayjs --external:@napi-rs/canvas",
-        "build-notice": "esbuild src/notice.ts --bundle --minify --platform=node --outfile=dist/notice.js --external:discord.js --external:dotenv --external:mongodb --external:dayjs --external:@napi-rs/canvas",
-        "build": "pnpm build-main && pnpm build-notice"
+        "build-main": "bun build src/main.ts --target=node --minify --outfile=dist/index.js --external @napi-rs/canvas",
+        "build-notice": "bun build src/notice.ts --target=node --minify --outfile=dist/notice.js --external @napi-rs/canvas",
+        "build": "bun run build-main && bun run build-notice"
     },
     "author": "bo-yakitarako",
     "license": "MIT",
@@ -18,14 +18,11 @@
         "@eslint/js": "^9.33.0",
         "@typescript-eslint/eslint-plugin": "^8.39.0",
         "@typescript-eslint/parser": "^8.39.0",
-        "esbuild": "^0.25.8",
         "eslint": "^9.33.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",
         "globals": "^16.3.0",
-        "nodemon": "^3.1.10",
         "prettier": "^3.6.2",
-        "ts-node": "^10.9.2",
         "typescript": "^5.9.2",
         "typescript-eslint": "^8.39.0"
     },
@@ -33,7 +30,6 @@
         "@napi-rs/canvas": "^0.1.85",
         "dayjs": "^1.11.13",
         "discord.js": "^14.21.0",
-        "dotenv": "^17.2.1",
         "mongodb": "^6.18.0"
     }
 }
