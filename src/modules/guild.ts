@@ -1,24 +1,11 @@
-import {
-  ChatInputCommandInteraction,
-  Client,
-  DiscordAPIError,
-  MessageFlags,
-  PermissionsBitField,
-  RepliableInteraction,
-  TextChannel,
-} from 'discord.js';
-import { Filter } from 'mongodb';
-import dayjs from 'dayjs';
-import { User } from '../db/User';
-import { NoticeChannel } from '../db/NoticeChannel';
-import { buildEmbed, makeButtonRow } from '../utils';
-
-const flags = MessageFlags.Ephemeral;
+import { makeButtonRow, type ChatInputCommandInteraction, type RepliableInteraction } from 'disbord';
+import { Client, DiscordAPIError, PermissionsBitField, TextChannel } from 'discord.js';
+import { NoticeChannel } from '@/db/models/NoticeChannel';
 
 export const setNoticeChannel = async (interaction: ChatInputCommandInteraction) => {
   const { guildId, channel, channelId } = interaction;
   if (guildId === null || !(channel instanceof TextChannel)) {
-    await interaction.reply({ content: 'こんなところに通知するのは野暮だと思わないか？', flags });
+    await interaction.ephemeral('こんなところに通知するのは野暮だと思わないか？');
     return;
   }
   if (!(await checkAdmin(interaction))) {
@@ -36,7 +23,7 @@ export const setNoticeChannel = async (interaction: ChatInputCommandInteraction)
 export const clearNotice = async (interaction: ChatInputCommandInteraction) => {
   const { guildId } = interaction;
   if (guildId === null) {
-    await interaction.reply({ content: 'ここどこー？', flags });
+    await interaction.ephemeral('ここどこー？');
     return;
   }
   if (!(await checkAdmin(interaction))) {
@@ -44,7 +31,7 @@ export const clearNotice = async (interaction: ChatInputCommandInteraction) => {
   }
   const noticeChannel = await NoticeChannel.find({ guildId });
   if (noticeChannel === null) {
-    await interaction.reply({ content: 'あれぇ？このサーバーで通知設定した覚えはないぞぉ', flags });
+    await interaction.ephemeral('あれぇ？このサーバーで通知設定した覚えはないぞぉ');
     return;
   }
   await noticeChannel.delete();
@@ -54,7 +41,7 @@ export const clearNotice = async (interaction: ChatInputCommandInteraction) => {
 const checkAdmin = async (interaction: ChatInputCommandInteraction) => {
   const { member } = interaction;
   if (member === null || !(member.permissions instanceof PermissionsBitField)) {
-    await interaction.reply({ content: 'ほ？', flags });
+    await interaction.ephemeral('ほ？');
     return false;
   }
   if (!member.permissions.has(PermissionsBitField.Flags.Administrator)) {
@@ -167,17 +154,16 @@ const messages = [
   '昨日もいい仕事してたな！今日もお前のペースで、のんびりやってこう。',
 ];
 
-export const sendNotices = async (client: Client) => {
+export const sendNotices = async (client: Client<true>) => {
   const noticeChannels = await NoticeChannel.findMany();
   const content = messages[Math.floor(Math.random() * messages.length)];
   const components = [makeButtonRow('draw', 'checkCounts', 'calendar')];
-  const embeds = await buildNewYearEmbeds();
   for (const noticeChannel of noticeChannels) {
     const { guildId, channelId } = noticeChannel;
     try {
       const guild = await client.guilds.fetch(guildId);
       const channel = (await guild.channels.fetch(channelId)) as TextChannel;
-      await channel.send({ content, embeds, components });
+      await channel.send({ content, components });
     } catch (error) {
       await noticeChannel.delete();
       if (!(error instanceof DiscordAPIError)) {
@@ -186,49 +172,10 @@ export const sendNotices = async (client: Client) => {
       if (error.message.includes('Unknown Guild')) {
         console.log(`ID:${guildId}のサーバーは参加してないぽいから削除したよ`);
       } else {
-        console.log(
-          `ID:${guildId}のサーバーのID:${channelId}のチャンネルは無くなってるみたいだから連携は削除したよ`,
-        );
+        console.log(`ID:${guildId}のサーバーのID:${channelId}のチャンネルは無くなってるみたいだから連携は削除したよ`);
       }
     }
   }
-};
-
-const buildNewYearEmbeds = async () => {
-  const today = dayjs();
-  if (today.month() !== 0 || today.date() !== 1) {
-    return undefined;
-  }
-  const title = '新年明けましておめでとうございます:bamboo:';
-  const newYear = today.year();
-  const prevYear = newYear - 1;
-  const allUsers = await User.findMany({
-    $expr: {
-      $gt: [
-        {
-          $size: {
-            $filter: {
-              input: { $objectToArray: '$result' },
-              as: 'item',
-              cond: { $regexMatch: { input: '$$item.k', regex: `^${prevYear}` } },
-            },
-          },
-        },
-        0,
-      ],
-    },
-  } as Filter<{
-    discordId: string;
-    result: { [key: string]: string };
-    createdAt: number;
-    updatedAt: number;
-  }>);
-  const count = allUsers.reduce((pre, cur) => {
-    const userDraws = Object.keys(cur.result).filter((key) => key.startsWith(prevYear.toString()));
-    return pre + userDraws.length;
-  }, 0);
-  const description = `${prevYear}年は全部で**${allUsers.length}人**の方が**${count}回**のおみくじを引いてくれました\n\nせっかく作ったものは使ってもらわないと泣いちゃうけど、こんだけみんなハマってくれるとは思わなくて、吉田を愛してくれてありがとうになりました。仲間がいる"よ!!!!\n\n吉田が出た方も出なかった方もいるかと思いますが${newYear}年もどうぞご贔屓ください\nみんなが引いてくれるのを見るたびしんにじえもは元気になります\n\nそういえばここだけの話、**吉田より確率の低いシークレット運勢**がどうやらあるようで...\n果たして誰が最初に引いてくれるんでしょうか`;
-  return [buildEmbed(title, description)];
 };
 
 export const sendNoticeManually = async (interaction: ChatInputCommandInteraction) => {
@@ -242,25 +189,22 @@ export const sendNoticeManually = async (interaction: ChatInputCommandInteractio
 export const checkTargetChannel = async (interaction: RepliableInteraction) => {
   const { guildId, channelId } = interaction;
   if (guildId === null) {
-    await interaction.reply({ content: 'こんなところは野暮だと思わないかね？', flags });
+    await interaction.ephemeral('こんなところは野暮だと思わないかね？');
     return null;
   }
   const noticeChannel = await NoticeChannel.find({ guildId });
   if (noticeChannel === null) {
-    const content = '```/notice```して通知先を設定してほしいのだ。管理者しかできねえけどな！';
-    await interaction.reply({ content, flags });
+    await interaction.ephemeral('```/notice```して通知先を設定してほしいのだ。管理者しかできねえけどな！');
     return null;
   }
   const targetChannel = interaction.guild?.channels.cache.get(noticeChannel.channelId) ?? null;
   if (targetChannel instanceof TextChannel) {
     if (channelId !== targetChannel.id) {
-      const content = `通知先に設定してある<#${targetChannel.id}>でやろうね`;
-      await interaction.reply({ content, flags });
+      await interaction.ephemeral(`通知先に設定してある<#${targetChannel.id}>でやろうね`);
       return null;
     }
     return targetChannel;
   }
-  const content = '通知先のチャンネル消えてね？```/notice```して通知先を再設定してほしいのだ';
-  await interaction.reply({ content, flags });
+  await interaction.ephemeral('通知先のチャンネル消えてね？```/notice```して通知先を再設定してほしいのだ');
   return null;
 };

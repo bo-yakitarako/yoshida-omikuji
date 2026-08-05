@@ -1,7 +1,5 @@
-/dist
-*.code-workspace
-/.vscode/sftp.json
-.env
-node_modules
+node_modules/
+dist/
+.disbord/
+env/.env.keys.*
 holidays.json
-test_calendar.png

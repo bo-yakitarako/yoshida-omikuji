@@ -1,78 +1,32 @@
-import {
-  ChatInputCommandInteraction,
-  MessageFlags,
-  SlashCommandBuilder,
-  TextChannel,
-} from 'discord.js';
-import * as guild from '../modules/guild';
-import * as user from '../modules/user';
-import * as calendar from '../modules/calendar';
+import type { SlashCommandRegistration } from 'disbord';
+import * as guild from '@/modules/guild';
+import * as user from '@/modules/user';
 
-const flags = MessageFlags.Ephemeral;
-
-const registration = {
+export default {
   notice: {
-    data: new SlashCommandBuilder().setName('notice').setDescription('このチャンネルに通知するよ'),
-    execute: async (interaction: ChatInputCommandInteraction) => {
-      await guild.setNoticeChannel(interaction);
-    },
+    description: 'このチャンネルに通知するよ',
+    execute: async (interaction) => guild.setNoticeChannel(interaction),
   },
   clear: {
-    data: new SlashCommandBuilder().setName('clear').setDescription('通知先を解除するよ'),
-    execute: async (interaction: ChatInputCommandInteraction) => {
-      await guild.clearNotice(interaction);
-    },
+    description: '通知先を解除するよ',
+    execute: async (interaction) => guild.clearNotice(interaction),
   },
-  manual: {
-    data: new SlashCommandBuilder().setName('manual').setDescription('おみくじボタンの再送信'),
-    execute: async (interaction: ChatInputCommandInteraction) => {
-      await guild.sendNoticeManually(interaction);
-    },
-  },
+  manual: async (interaction) => guild.sendNoticeManually(interaction),
   omikuji: {
-    data: new SlashCommandBuilder().setName('omikuji').setDescription('おみくじを引くよ'),
-    execute: async (interaction: ChatInputCommandInteraction) => {
-      await user.draw(interaction);
-    },
+    description: 'おみくじを引くよ',
+    execute: async (interaction) => user.draw(interaction),
   },
-  counts: {
-    data: new SlashCommandBuilder().setName('counts').setDescription('おみくじの回数を確認するよ'),
-    execute: async (interaction: ChatInputCommandInteraction) => {
-      await user.checkCounts(interaction);
-    },
-  },
+  counts: async (interaction) => user.checkCounts(interaction),
   month: {
-    data: new SlashCommandBuilder()
-      .setName('month')
-      .setDescription('指定月のおみくじ回数を見るよ(指定無しは今月のやつ)')
-      .addNumberOption((option) => option.setName('year').setDescription('年'))
-      .addNumberOption((option) => option.setName('month').setDescription('月')),
-    execute: async (interaction: ChatInputCommandInteraction) => {
-      await user.checkMonthCounts(interaction);
-    },
+    description: '指定月のおみくじ回数を見るよ(指定無しは今月のやつ)',
+    options: [
+      { type: 'integer', name: 'year', description: '年' },
+      { type: 'integer', name: 'month', description: '月' },
+    ],
+    execute: async (interaction) => user.checkMonthCounts(interaction),
   },
-  total: {
-    data: new SlashCommandBuilder().setName('total').setDescription('今までの全おみくじを見るよ'),
-    execute: async (interaction: ChatInputCommandInteraction) => {
-      await user.sendTotalResult(interaction);
-    },
+  total: async (interaction) => user.sendTotalResult(interaction),
+  calendar: async (interaction) => {
+    await interaction.ephemeral('ぽんちゃんだね');
   },
-  calendar: {
-    data: new SlashCommandBuilder().setName('calendar').setDescription('おみくじカレンダーなのだ'),
-    execute: async (interaction: ChatInputCommandInteraction) => {
-      await calendar.callCalendarSelections(interaction);
-    },
-  },
-};
-
-type CommandName = keyof typeof registration;
-
-export const commands = Object.values(registration).map(({ data }) => data.toJSON());
-export const slashCommandsInteraction = async (interaction: ChatInputCommandInteraction) => {
-  if (!(interaction.channel instanceof TextChannel)) {
-    await interaction.reply({ content: 'ほ？', flags });
-    return;
-  }
-  const commandName = interaction.commandName as CommandName;
-  await registration[commandName].execute(interaction);
-};
+} satisfies SlashCommandRegistration;

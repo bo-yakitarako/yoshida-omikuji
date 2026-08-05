@@ -33,7 +33,7 @@ const fetchFromApi = async (): Promise<HolidaysData> => {
 const hasDataForMonthOrLater = (data: HolidaysData, year: number, month: number): boolean => {
   const targetYearMonth = year * 100 + month; // YYYYMM形式の数値
   return Object.keys(data).some((dateStr) => {
-    const [y, m] = dateStr.split('-').map(Number);
+    const [y, m] = dateStr.split('-').map(Number) as [number, number];
     const yearMonth = y * 100 + m;
     return yearMonth >= targetYearMonth;
   });
@@ -60,7 +60,7 @@ export const fetchHolidays = async (year: number, month: number): Promise<number
   const holidayDays = Object.keys(holidays)
     .filter((dateStr) => dateStr.startsWith(monthPrefix))
     .map((dateStr) => {
-      const day = dateStr.split('-')[2];
+      const day = dateStr.split('-')[2]!;
       return parseInt(day, 10);
     });
 

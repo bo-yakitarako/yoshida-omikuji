@@ -1,81 +1,41 @@
-import { ButtonBuilder, ButtonInteraction, ButtonStyle } from 'discord.js';
-import * as user from '../modules/user';
-import * as calendar from '../modules/calendar';
+import type { ButtonRegistration } from 'disbord';
+import * as calendar from '@/modules/calendar';
+import * as user from '@/modules/user';
 
-const registration = {
+export default {
   draw: {
-    component: new ButtonBuilder()
-      .setCustomId('draw')
-      .setLabel('今日の運勢を占う')
-      .setStyle(ButtonStyle.Primary),
-    async execute(interaction: ButtonInteraction) {
-      await user.draw(interaction);
-    },
+    component: { label: '今日の運勢を占う', style: 'primary' },
+    execute: async (interaction) => user.draw(interaction),
   },
   checkCounts: {
-    component: new ButtonBuilder()
-      .setCustomId('checkCounts')
-      .setLabel('今まで何をひいてきたかな？')
-      .setStyle(ButtonStyle.Secondary),
-    async execute(interaction: ButtonInteraction) {
-      await user.checkCounts(interaction);
-    },
-  },
-  calendar: {
-    component: new ButtonBuilder()
-      .setCustomId('calendar')
-      .setLabel('カレンダー見ちゃおっかな')
-      .setStyle(ButtonStyle.Secondary),
-    async execute(interaction: ButtonInteraction) {
-      await calendar.callCalendarSelections(interaction);
-    },
+    component: { label: '今まで何をひいてきたかな？', style: 'secondary' },
+    execute: async (interaction) => user.checkCounts(interaction),
   },
   todayResult: {
-    component: new ButtonBuilder()
-      .setCustomId('todayResult')
-      .setLabel('チャンネルに今日の運勢を送信する')
-      .setStyle(ButtonStyle.Secondary),
-    async execute(interaction: ButtonInteraction) {
-      await user.displayTodayResult(interaction);
-    },
+    component: { label: 'チャンネルに今日の運勢を送信する', style: 'secondary' },
+    execute: async (interaction) => user.displayTodayResult(interaction),
   },
   noticeCounts: {
-    component: new ButtonBuilder()
-      .setCustomId('noticeCounts')
-      .setLabel('今までの軌跡をみんなに共有する')
-      .setStyle(ButtonStyle.Secondary),
-    async execute(interaction: ButtonInteraction) {
-      await user.noticeCounts(interaction);
-    },
+    component: { label: '今までの軌跡をみんなに共有する', style: 'secondary' },
+    execute: async (interaction) => user.shareEmbed(interaction),
+  },
+  shareMonthCounts: {
+    component: (year: number, month: number) => ({
+      label: `${year}年${month}月の軌跡をみんなに共有する`,
+      style: 'secondary',
+    }),
+    execute: async (interaction) => user.shareEmbed(interaction),
+  },
+  calendar: {
+    component: { label: 'カレンダー見ちゃおっかな', style: 'secondary' },
+    execute: async (interaction) => calendar.callCalendarSelections(interaction),
+  },
+  submitCalendar: {
+    component: (year: number, month: number) => ({ label: `${year}年${month}月のやつ見ちゃう？`, style: 'primary' }),
+    execute: async (interaction) => calendar.submitCalendar(interaction),
   },
   shareCalendar: {
-    component: new ButtonBuilder()
-      .setCustomId('shareCalendar')
-      .setLabel('このカレンダーを見せびらかしちゃう')
-      .setStyle(ButtonStyle.Secondary),
-    async execute(interaction: ButtonInteraction) {
-      await calendar.shareCalendar(interaction);
-    },
+    component: { label: 'このカレンダーを見せびらかしちゃう', style: 'secondary' },
+    execute: async (interaction) => calendar.shareCalendar(interaction),
   },
-};
-
-type CustomId = keyof typeof registration;
-
-export const button = Object.fromEntries(
-  (Object.keys(registration) as CustomId[]).map((id) => [id, registration[id].component] as const),
-) as { [key in CustomId]: ButtonBuilder };
-
-export const buttonInteraction = async (interaction: ButtonInteraction) => {
-  const customId = interaction.customId;
-  if (['year', 'month', 'shareMonthCounts'].some((prefix) => customId.startsWith(prefix))) {
-    if (customId.startsWith('year')) {
-      await calendar.selectYear(interaction);
-    } else if (customId.startsWith('month')) {
-      await calendar.selectMonth(interaction);
-    } else {
-      await user.shareMonthCounts(interaction);
-    }
-    return;
-  }
-  await registration[customId as CustomId].execute(interaction);
-};
+} satisfies ButtonRegistration;

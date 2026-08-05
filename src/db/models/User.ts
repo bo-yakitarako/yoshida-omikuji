@@ -1,0 +1,157 @@
+import dayjs from 'dayjs';
+import { Column, Index, Model, Table, type RepliableInteraction } from 'disbord';
+import { buildEmbed, getMemberInfo } from 'disbord/utils';
+import { Result } from '@/db/models/Result';
+import { Total } from '@/db/models/Total';
+
+export const omikuji = {
+  kira: '吉良吉影',
+  yoshida: '吉田',
+  daikichi: '大吉',
+  chukichi: '中吉',
+  kichi: '吉',
+  syokichi: '小吉',
+  suekichi: '末吉',
+  kyo: '凶',
+  daikyo: '大凶',
+};
+const percentages = [3, 10, 100, 300, 450, 600, 700, 900, 1001] as const;
+export type Omikuji = keyof typeof omikuji;
+
+@Table('users')
+export class User extends Model<User.Data> {
+  @Column('text')
+  @Index()
+  accessor discordId!: string;
+
+  @Column('integer', { default: 0 })
+  accessor kira!: number;
+
+  @Column('integer', { default: 0 })
+  accessor yoshida!: number;
+
+  @Column('integer', { default: 0 })
+  accessor daikichi!: number;
+
+  @Column('integer', { default: 0 })
+  accessor chukichi!: number;
+
+  @Column('integer', { default: 0 })
+  accessor kichi!: number;
+
+  @Column('integer', { default: 0 })
+  accessor syokichi!: number;
+
+  @Column('integer', { default: 0 })
+  accessor suekichi!: number;
+
+  @Column('integer', { default: 0 })
+  accessor kyo!: number;
+
+  @Column('integer', { default: 0 })
+  accessor daikyo!: number;
+
+  @Column('integer', { default: 0 })
+  accessor streak!: number;
+
+  public async draw(discordId: string) {
+    const today = dayjs();
+    const todayQuery = { userId: this.id, discordId, year: today.year(), month: today.month() + 1, day: today.date() };
+    if (this.discordId === process.env.YOSHIDA_USER_ID) {
+      const nextStreak = (await this.hasStreak()) ? this.streak + 1 : 1;
+      await this.update({ yoshida: this.yoshida + 1, streak: nextStreak });
+      await Result.create({ result: 'yoshida', ...todayQuery });
+      return { omikuji: '吉田', success: true };
+    }
+    const todayResult = await Result.find(todayQuery);
+    if (todayResult !== null) {
+      return { omikuji: omikuji[todayResult.result], success: false };
+    }
+    const omikujiKeys = Object.keys(omikuji) as Omikuji[];
+    const random = Math.floor(Math.random() * 1000);
+    const result = omikujiKeys[percentages.findIndex((p) => p > random)]!;
+    await Result.create({ result, ...todayQuery });
+    const nextStreak = (await this.hasStreak()) ? this.streak + 1 : 1;
+    await this.update({ [result]: this[result] + 1, streak: nextStreak });
+    await Total.increment(result);
+    return { omikuji: omikuji[result], success: true };
+  }
+
+  public buildCountEmbed(interaction: RepliableInteraction) {
+    const count = `(全${this.totalCount}回)`;
+    const author = getMemberInfo(interaction, (name) => `${name}くんの軌跡${count}`);
+    const description = this.buildCountDescription();
+    const fields = this.buildSequenceCountFields();
+    return buildEmbed(author, description, fields, 'success');
+  }
+
+  private buildSequenceCountFields() {
+    if (this.streak === 1 || !this.updatedAt.isSame(dayjs(), 'date')) {
+      return [];
+    }
+    return [{ name: 'なんと今...', value: `**連続${this.streak}日**連続おみくじ継続中！`, inline: false }];
+  }
+
+  public async buildMonthCountEmbed(interaction: RepliableInteraction, year: number, month: number) {
+    const results = await Result.findMany({ userId: this.id, year, month });
+    if (results.length === 0) {
+      return null;
+    }
+    const count = `(全${results.length}回)`;
+    const nameArrange = (name: string) => `${name}くんの${year}年${month}月の軌跡${count}`;
+    const author = getMemberInfo(interaction, nameArrange);
+    const description = this.buildCountDescription(results);
+    return buildEmbed(author, description, 'success');
+  }
+
+  private buildCountDescription(results?: Result[]) {
+    const totalCount = results?.length ?? this.totalCount;
+    return (Object.entries(this.countResult(results)) as [Omikuji, number][])
+      .filter(([, count]) => count > 0)
+      .map(([key, count]) => `${omikuji[key]}: ${count}回 (${((count / totalCount) * 100).toFixed(2)}%)`)
+      .join('\n');
+  }
+
+  private get totalCount() {
+    return Object.values(this.countResult()).reduce((acc, count) => acc + count, 0);
+  }
+
+  private countResult(results?: Result[]) {
+    const keys = Object.keys(omikuji) as Omikuji[];
+    const resultCount = Object.fromEntries(keys.map((key) => [key, 0])) as { [key in Omikuji]: number };
+    if (results === undefined) {
+      for (const key of keys) {
+        resultCount[key] = this[key];
+      }
+      return resultCount;
+    }
+    for (const { result } of results) {
+      resultCount[result] += 1;
+    }
+    return resultCount;
+  }
+
+  private async hasStreak() {
+    const yesterday = dayjs().subtract(1, 'day');
+    const query = { userId: this.id, year: yesterday.year(), month: yesterday.month() + 1, day: yesterday.date() };
+    const hasStreak = await Result.exists(query);
+    return hasStreak;
+  }
+}
+
+// AUTO-GENERATED by disbord. Do not edit below this line — regenerated by `disbord generate model` / `disbord migrate` / `disbord model type`.
+export namespace User {
+  export type Data = {
+    discordId: string;
+    kira?: number;
+    yoshida?: number;
+    daikichi?: number;
+    chukichi?: number;
+    kichi?: number;
+    syokichi?: number;
+    suekichi?: number;
+    kyo?: number;
+    daikyo?: number;
+    streak?: number;
+  };
+}

@@ -1,11 +1,14 @@
-import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
-import { omikuji, Omikuji } from '../../db/User';
+import fs from 'fs';
 import path from 'path';
+import { PassThrough } from 'stream';
 import dayjs from 'dayjs';
-import { fetchHolidays } from './holidays';
+import * as PImage from 'pureimage';
+import { omikuji, type Omikuji } from '@/db/models/User';
+import { fetchHolidays } from '@/modules/calendar/holidays';
 
+const FONT_FAMILY = 'Hangyaku';
 const fontPath = path.join(process.cwd(), 'assets/Hangyaku.ttf');
-GlobalFonts.registerFromPath(fontPath, 'Hangyaku');
+PImage.registerFont(fontPath, FONT_FAMILY).loadSync();
 
 const GRID = {
   startX: 65,
@@ -53,6 +56,17 @@ const getDayColor = (dayOfWeek: number, isHoliday: boolean): string => {
 };
 
 /**
+ * Bitmapをpng形式のBufferにエンコードする
+ */
+const encodeToPngBuffer = async (bitmap: PImage.Bitmap): Promise<Buffer> => {
+  const chunks: Buffer[] = [];
+  const stream = new PassThrough();
+  stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+  await PImage.encodePNGToStream(bitmap, stream);
+  return Buffer.concat(chunks);
+};
+
+/**
  * カレンダー画像を生成
  * @param year 年
  * @param month 月（1-12）
@@ -61,18 +75,18 @@ const getDayColor = (dayOfWeek: number, isHoliday: boolean): string => {
 export const generateCalendar = async (
   year: number,
   month: number,
-  days: { [date in string]: Omikuji },
+  days: { day: number; omikuji: Omikuji }[],
 ): Promise<Buffer> => {
   const basePath = path.join(process.cwd(), 'assets/calendar_base.png');
-  const baseImage = await loadImage(basePath);
+  const baseImage = await PImage.decodePNGFromStream(fs.createReadStream(basePath));
 
-  const canvas = createCanvas(baseImage.width, baseImage.height);
+  const canvas = PImage.make(baseImage.width, baseImage.height);
   const ctx = canvas.getContext('2d');
 
   ctx.drawImage(baseImage, 0, 0);
 
   const yearMonthText = `${year} / ${String(month).padStart(2, '0')}`;
-  ctx.font = 'bold 72px sans-serif';
+  ctx.font = `72px ${FONT_FAMILY}`;
   ctx.fillStyle = black;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -83,28 +97,27 @@ export const generateCalendar = async (
   const daysInMonth = firstDay.daysInMonth();
   const holidays = await fetchHolidays(year, month);
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const dayOfWeek = (startDayOfWeek + day - 1) % 7;
+  for (let date = 1; date <= daysInMonth; date++) {
+    const dayOfWeek = (startDayOfWeek + date - 1) % 7;
     const col = dayOfWeek;
-    const row = Math.floor((startDayOfWeek + day - 1) / 7);
+    const row = Math.floor((startDayOfWeek + date - 1) / 7);
 
     const { x, y } = getCellPosition(col, row);
 
-    ctx.font = 'bold 28px sans-serif';
+    ctx.font = `28px ${FONT_FAMILY}`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
     ctx.lineWidth = 4;
     ctx.strokeStyle = '#FFFFFF';
     const gap = 4;
-    ctx.strokeText(String(day), x + GRID.cellSize - gap, y + gap);
-    ctx.fillStyle = getDayColor(dayOfWeek, holidays.includes(day));
-    ctx.fillText(String(day), x + GRID.cellSize - gap, y + gap);
+    ctx.strokeText(String(date), x + GRID.cellSize - gap, y + gap);
+    ctx.fillStyle = getDayColor(dayOfWeek, holidays.includes(date));
+    ctx.fillText(String(date), x + GRID.cellSize - gap, y + gap);
 
-    const omikujiKey = days[dateStr];
+    const omikujiKey = days.find(({ day }) => day == date)?.omikuji;
     if (omikujiKey) {
       const omikujiText = omikuji[omikujiKey];
-      ctx.font = 'bold 56px Hangyaku';
+      ctx.font = `56px ${FONT_FAMILY}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.lineWidth = 2;
@@ -113,5 +126,5 @@ export const generateCalendar = async (
     }
   }
 
-  return canvas.toBuffer('image/png');
+  return encodeToPngBuffer(canvas);
 };
