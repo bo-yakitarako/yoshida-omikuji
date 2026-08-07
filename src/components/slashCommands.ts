@@ -1,4 +1,5 @@
 import type { SlashCommandRegistration } from 'disbord';
+import * as calendar from '@/modules/calendar';
 import * as guild from '@/modules/guild';
 import * as user from '@/modules/user';
 
@@ -26,7 +27,5 @@ export default {
     execute: async (interaction) => user.checkMonthCounts(interaction),
   },
   total: async (interaction) => user.sendTotalResult(interaction),
-  calendar: async (interaction) => {
-    await interaction.ephemeral('ぽんちゃんだね');
-  },
+  calendar: async (interaction) => calendar.callCalendarSelections(interaction),
 } satisfies SlashCommandRegistration;

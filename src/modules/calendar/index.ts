@@ -82,13 +82,13 @@ export const submitCalendar = async (interaction: ButtonInteraction) => {
   const today = dayjs();
   const year = monthSelection[id]?.year ?? today.year();
   const month = monthSelection[id]?.month ?? today.month() + 1;
-  const dayResults = await Result.findMany({ userId: id, year, month });
+  const dayResults = await Result.findMany({ discordId: id, year, month });
   const days = dayResults.map((r) => ({ day: r.day, omikuji: r.result }));
   const calendarBuffer = await generateCalendar(year, month, days);
   const attachment = new AttachmentBuilder(calendarBuffer, { name: 'calendar.png' });
   const author = getMemberInfo(interaction, (name) => `${name}くんのカレンダー`);
   const embed = buildEmbed(author, '', 'success').setImage('attachment://calendar.png');
-  await interaction.ephemeral({ embeds: [embed], files: [attachment] });
+  await interaction.ephemeral({ embeds: [embed], files: [attachment], components: [makeButtonRow('shareCalendar')] });
 };
 
 export const shareCalendar = async (interaction: ButtonInteraction) => {

@@ -57,15 +57,16 @@ export class User extends Model<User.Data> {
   public async draw(discordId: string) {
     const today = dayjs();
     const todayQuery = { userId: this.id, discordId, year: today.year(), month: today.month() + 1, day: today.date() };
+    const todayResult = await Result.find(todayQuery);
+    if (todayResult !== null) {
+      return { omikuji: omikuji[todayResult.result], success: false };
+    }
     if (this.discordId === process.env.YOSHIDA_USER_ID) {
       const nextStreak = (await this.hasStreak()) ? this.streak + 1 : 1;
       await this.update({ yoshida: this.yoshida + 1, streak: nextStreak });
       await Result.create({ result: 'yoshida', ...todayQuery });
+      await Total.increment('yoshida');
       return { omikuji: '吉田', success: true };
-    }
-    const todayResult = await Result.find(todayQuery);
-    if (todayResult !== null) {
-      return { omikuji: omikuji[todayResult.result], success: false };
     }
     const omikujiKeys = Object.keys(omikuji) as Omikuji[];
     const random = Math.floor(Math.random() * 1000);
