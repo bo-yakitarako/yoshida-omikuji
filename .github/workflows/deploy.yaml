@@ -1,0 +1,113 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: publish
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup mise (bun)
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Write env keys
+        run: echo "${{ secrets.ENV_KEYS }}" > env/.env.keys.production
+
+      - name: Build
+        run: bun run build
+
+      - name: Migrate
+        run: bun run migrate --production
+
+      - name: Register slash commands
+        run: bun run commands --production
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add remote host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload build artifacts
+        run: |
+          rsync -avz dist/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}":"${{ secrets.DEPLOY_PATH }}"
+          rsync -avz assets/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}":"${{ secrets.DEPLOY_PATH }}/assets/"
+
+      - name: Deploy service
+        run: |
+          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -s <<'EOF'
+          set -e
+          if [ -f ~/.config/systemd/user/yoshida.service ]; then
+            systemctl --user restart yoshida
+          else
+            mkdir -p ~/.config/systemd/user
+            cat > ~/.config/systemd/user/yoshida.service <<'UNIT'
+          [Unit]
+          Description=yoshida discord bot
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          WorkingDirectory=${{ secrets.DEPLOY_PATH }}
+          ExecStart=mise run main
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=default.target
+          UNIT
+            systemctl --user daemon-reload
+            systemctl --user start yoshida
+            systemctl --user enable yoshida
+          fi
+          EOF
+
+      - name: Deploy once timers
+        run: |
+          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -s <<'EOF'
+          set -e
+          mkdir -p ~/.config/systemd/user
+          cat > ~/.config/systemd/user/yoshida-notice.service <<'UNIT'
+          [Unit]
+          Description=yoshida discord bot one shot script: notice
+
+          [Service]
+          Type=oneshot
+          WorkingDirectory=${{ secrets.DEPLOY_PATH }}
+          ExecStart=mise run notice
+
+          [Install]
+          WantedBy=default.target
+          UNIT
+          cat > ~/.config/systemd/user/yoshida-notice.timer <<'UNIT'
+          [Unit]
+          Description=Timer for yoshida discord bot one shot script: notice
+
+          [Timer]
+          OnCalendar=*-*-* 00:00
+          Persistent=false
+
+          [Install]
+          WantedBy=timers.target
+          UNIT
+          systemctl --user daemon-reload
+          systemctl --user enable --now yoshida-notice.timer
+          EOF

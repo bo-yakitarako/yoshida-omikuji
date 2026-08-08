@@ -6,9 +6,12 @@ import * as PImage from 'pureimage';
 import { omikuji, type Omikuji } from '@/db/models/User';
 import { fetchHolidays } from '@/modules/calendar/holidays';
 
-const FONT_FAMILY = 'Hangyaku';
-const fontPath = path.join(process.cwd(), 'assets/Hangyaku.ttf');
-PImage.registerFont(fontPath, FONT_FAMILY).loadSync();
+const OMIKUJI_FAMILY = 'WDXLLubrifontJPN';
+const DATE_FAMILY = 'GoblinOne';
+const omikujiFontPath = path.join(process.cwd(), `assets/${OMIKUJI_FAMILY}.ttf`);
+PImage.registerFont(omikujiFontPath, OMIKUJI_FAMILY).loadSync();
+const dateFontPath = path.join(process.cwd(), `assets/${DATE_FAMILY}.ttf`);
+PImage.registerFont(dateFontPath, DATE_FAMILY).loadSync();
 
 const GRID = {
   startX: 65,
@@ -86,7 +89,7 @@ export const generateCalendar = async (
   ctx.drawImage(baseImage, 0, 0);
 
   const yearMonthText = `${year} / ${String(month).padStart(2, '0')}`;
-  ctx.font = `72px ${FONT_FAMILY}`;
+  ctx.font = `72px ${DATE_FAMILY}`;
   ctx.fillStyle = black;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -104,20 +107,18 @@ export const generateCalendar = async (
 
     const { x, y } = getCellPosition(col, row);
 
-    ctx.font = `28px ${FONT_FAMILY}`;
+    ctx.font = `28px ${DATE_FAMILY}`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
     ctx.lineWidth = 4;
-    ctx.strokeStyle = '#FFFFFF';
-    const gap = 4;
-    ctx.strokeText(String(date), x + GRID.cellSize - gap, y + gap);
+    const gap = 2;
     ctx.fillStyle = getDayColor(dayOfWeek, holidays.includes(date));
     ctx.fillText(String(date), x + GRID.cellSize - gap, y + gap);
 
     const omikujiKey = days.find(({ day }) => day == date)?.omikuji;
     if (omikujiKey) {
       const omikujiText = omikuji[omikujiKey];
-      ctx.font = `56px ${FONT_FAMILY}`;
+      ctx.font = `42px ${OMIKUJI_FAMILY}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.lineWidth = 2;
