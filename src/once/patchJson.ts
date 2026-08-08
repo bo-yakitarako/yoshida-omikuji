@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import dayjs from 'dayjs';
 import { db } from 'disbord';
 import { NoticeChannel } from '@/db/models/NoticeChannel';
@@ -21,8 +23,13 @@ export default async function () {
   await db.delete(user);
   await db.delete(result);
   await db.delete(noticeChannel);
-  const usersJson = (await import('../../output/mongoUsers.json')).default; // oxlint-disable-line no-restricted-imports
-  const noticeChannelsJson = (await import('../../output/mongoNoticeChannels.json')).default; // oxlint-disable-line no-restricted-imports
+  const usersJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'output/mongoUsers.json'), 'utf-8')) as {
+    discordId: string;
+    result: { [date: string]: Omikuji };
+  }[];
+  const noticeChannelsJson = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), 'output/mongoNoticeChannels.json'), 'utf-8'),
+  ) as { guildId: string; channelId: string }[];
   await NoticeChannel.create(noticeChannelsJson.map(({ guildId, channelId }) => ({ guildId, channelId })));
   const users = await User.create(
     usersJson.map(({ discordId, result }) => {
