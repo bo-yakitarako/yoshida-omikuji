@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { db } from 'disbord';
 import { NoticeChannel } from '@/db/models/NoticeChannel';
 import { Result } from '@/db/models/Result';
@@ -26,10 +27,23 @@ export default async function () {
   const users = await User.create(
     usersJson.map(({ discordId, result }) => {
       const count = { ...omikujiDefault };
-      for (const omikuji of Object.values(result) as Omikuji[]) {
-        count[omikuji]++;
+      let targetToday = dayjs();
+      let streak = 0;
+      let maxStreak = 0;
+      for (const date of Object.keys(result).sort((a, b) => b.localeCompare(a))) {
+        count[result[date as never] as Omikuji]++;
+        const target = dayjs(date);
+        if (target.isSame(targetToday, 'day')) {
+          streak += 1;
+        } else {
+          if (streak > maxStreak) {
+            maxStreak = streak;
+          }
+          streak = 0;
+        }
+        targetToday = target.subtract(1, 'day');
       }
-      return { discordId, ...count };
+      return { discordId, ...count, streak: maxStreak || streak || 1 };
     }),
   );
   const userIdMap = Object.fromEntries(users.map((user) => [user.discordId, user.id]));

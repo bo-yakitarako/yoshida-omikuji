@@ -87,7 +87,7 @@ export class User extends Model<User.Data> {
   }
 
   private buildSequenceCountFields() {
-    if (this.streak === 1 || !this.updatedAt.isSame(dayjs(), 'date')) {
+    if (this.streak <= 1 || !this.updatedAt.isSame(dayjs(), 'date')) {
       return [];
     }
     return [{ name: 'なんと今...', value: `**連続${this.streak}日**連続おみくじ継続中！`, inline: false }];
