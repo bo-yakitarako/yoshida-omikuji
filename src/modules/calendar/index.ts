@@ -1,12 +1,14 @@
-import dayjs from 'dayjs';
 import type { RepliableInteraction, ButtonInteraction, StringSelectMenuInteraction } from 'disbord';
 import { makeButtonRow, makeSelectMenuRow } from 'disbord';
 import { buildEmbed, getMemberInfo } from 'disbord/utils';
-import { AttachmentBuilder, GuildMember, TextChannel, type TopLevelComponent } from 'discord.js';
+import { AttachmentBuilder, GuildMember, TextChannel } from 'discord.js';
 import { Result } from '@/db/models/Result';
 import { User } from '@/db/models/User';
 import { generateCalendar } from '@/modules/calendar/calendarGeneration';
 import { checkTargetChannel } from '@/modules/guild';
+
+const monthSelection: { [id in string]: { year: number; month: number } } = {};
+const calendarBuffers: { [id in string]: Buffer } = {};
 
 export const callCalendarSelections = async (interaction: RepliableInteraction) => {
   if ((await checkTargetChannel(interaction)) === null) {
@@ -17,12 +19,14 @@ export const callCalendarSelections = async (interaction: RepliableInteraction) 
     await interaction.ephemeral('1回占ってこようねー');
     return;
   }
-  const today = dayjs();
-  const [year, month] = [today.year(), today.month() + 1];
+  const years = await extractDurations(interaction);
+  const year = years.at(-1)!;
+  const months = await extractDurations(interaction, year);
+  monthSelection[interaction.user.id] = { year, month: months.at(-1)! };
   const components = [
-    makeSelectMenuRow('year', await extractDurations(interaction)),
-    makeSelectMenuRow('month', await extractDurations(interaction, year)),
-    makeButtonRow(['submitCalendar', year, month]),
+    makeSelectMenuRow('year', years),
+    makeSelectMenuRow('month', months),
+    makeButtonRow('submitCalendar'),
   ];
   await interaction.ephemeral({ content: 'いつのやつが見たいのー？', components });
 };
@@ -30,19 +34,18 @@ export const callCalendarSelections = async (interaction: RepliableInteraction) 
 export const selectYear = async (interaction: StringSelectMenuInteraction) => {
   const selectedYear = parseInt(interaction.values[0]!);
   const id = interaction.user.id;
-  monthSelection[id] ??= {};
-  const selection = monthSelection[id];
+  const selection = monthSelection[id]!;
   const months = await extractDurations(interaction, selectedYear);
-  if (selection?.year !== undefined && selectedYear !== selection.year && !months.includes(selection?.month ?? -1)) {
-    selection.month = undefined;
+  if (selectedYear !== selection.year && !months.includes(selection.month)) {
+    selection.month = months.at(-1)!;
   }
-  monthSelection[id].year = selectedYear;
-  const prevComponents = interaction.message.components;
+  monthSelection[id]!.year = selectedYear;
+  const years = await extractDurations(interaction);
   const components = [
-    prevComponents[0],
-    makeSelectMenuRow('month', months),
-    makeButtonRow(['submitCalendar', selectedYear, monthSelection[id].month ?? months[months.length - 1]!]),
-  ] as TopLevelComponent[];
+    makeSelectMenuRow('year', years, selectedYear),
+    makeSelectMenuRow('month', months, selection.month),
+    makeButtonRow('submitCalendar'),
+  ];
   const { content, embeds } = interaction.message;
   await interaction.update({ content, embeds, components });
 };
@@ -50,64 +53,53 @@ export const selectYear = async (interaction: StringSelectMenuInteraction) => {
 export const selectMonth = async (interaction: StringSelectMenuInteraction) => {
   const selectedMonth = parseInt(interaction.values[0]!);
   const id = interaction.user.id;
-  monthSelection[id] ??= {};
-  monthSelection[id].month = selectedMonth;
-  const prevComponents = interaction.message.components;
-  const year = monthSelection[id].year ?? dayjs().year();
-  const components = [
-    ...prevComponents.slice(0, 2),
-    makeButtonRow(['submitCalendar', year, selectedMonth]),
-  ] as TopLevelComponent[];
-  const { content, embeds } = interaction.message;
-  await interaction.update({ content, embeds, components });
+  monthSelection[id]!.month = selectedMonth;
+  await interaction.deferUpdate();
 };
-
-const monthSelection: { [id in string]: { year?: number; month?: number } } = {};
 
 const extractDurations = async (interaction: RepliableInteraction, year?: number) => {
   const discordId = interaction.user.id;
-  const today = dayjs();
-  const selection = monthSelection[discordId];
-  const query = {
-    discordId,
-    year: year ?? selection?.year ?? today.year(),
-    month: selection?.month ?? today.month() + 1,
-  };
+  const query = { discordId, year };
   const results = await Result.findDistinct([year ? 'month' : 'year'], query);
   return results.map((r) => (year ? r.month : r.year)).sort((a, b) => a - b);
 };
 
 export const submitCalendar = async (interaction: ButtonInteraction) => {
   const id = interaction.user.id;
-  const today = dayjs();
-  const year = monthSelection[id]?.year ?? today.year();
-  const month = monthSelection[id]?.month ?? today.month() + 1;
+  const { year, month } = monthSelection[id]!;
   const dayResults = await Result.findMany({ discordId: id, year, month });
   const days = dayResults.map((r) => ({ day: r.day, omikuji: r.result }));
   const calendarBuffer = await generateCalendar(year, month, days);
+  calendarBuffers[id] = calendarBuffer;
   const attachment = new AttachmentBuilder(calendarBuffer, { name: 'calendar.png' });
   const author = getMemberInfo(interaction, (name) => `${name}くんのカレンダー`);
   const embed = buildEmbed(author, '', 'success').setImage('attachment://calendar.png');
-  await interaction.ephemeral({ embeds: [embed], files: [attachment], components: [makeButtonRow('shareCalendar')] });
+  await interaction.update({
+    content: 'どんな感じかなー？',
+    embeds: [embed],
+    files: [attachment],
+    components: [makeButtonRow('shareCalendar')],
+  });
+  delete monthSelection[id];
 };
 
 export const shareCalendar = async (interaction: ButtonInteraction) => {
-  const { channel, member, message } = interaction;
+  const { channel, member } = interaction;
   if (!(channel instanceof TextChannel) || !(member instanceof GuildMember)) {
     await interaction.ephemeral('ここでは共有できないよ');
     return;
   }
-  const originalAttachment = message.attachments.first();
-  if (!originalAttachment) {
+  const id = interaction.user.id;
+  const calendarBuffer = calendarBuffers[id];
+  if (!calendarBuffer) {
     await interaction.ephemeral('画像が見つからないよ');
     return;
   }
   await interaction.deferUpdate();
-  const response = await fetch(originalAttachment.url);
   await interaction.deleteReply();
-  const buffer = Buffer.from(await response.arrayBuffer());
-  const newAttachment = new AttachmentBuilder(buffer, { name: 'calendar.png' });
+  const newAttachment = new AttachmentBuilder(calendarBuffer, { name: 'calendar.png' });
   const author = getMemberInfo(interaction, (name) => `${name}くんのカレンダー`);
   const embed = buildEmbed(author, '', 'success').setImage('attachment://calendar.png');
   await channel.send({ embeds: [embed], files: [newAttachment] });
+  delete calendarBuffers[id];
 };

@@ -31,7 +31,7 @@ export default {
     execute: async (interaction) => calendar.callCalendarSelections(interaction),
   },
   submitCalendar: {
-    component: (year: number, month: number) => ({ label: `${year}年${month}月のやつ見ちゃう？`, style: 'primary' }),
+    component: { label: 'カレンダー出しちゃう', style: 'primary' },
     execute: async (interaction) => calendar.submitCalendar(interaction),
   },
   shareCalendar: {
