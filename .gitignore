@@ -3,3 +3,4 @@ dist/
 .disbord/
 env/.env.keys.*
 holidays.json
+output/

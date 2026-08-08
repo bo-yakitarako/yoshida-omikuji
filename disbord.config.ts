@@ -7,6 +7,8 @@ export default {
   },
   timer: {
     notice: '*-*-* 00:00',
+    mongo: '*-*-* *:00:00',
+    patchJson: '*-*-* *:00:00',
   },
   botErrorMessage: 'エラーが発生しました',
 } satisfies Config;
