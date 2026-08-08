@@ -24,9 +24,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Write env keys
-        env:
-          ENV_KEYS: ${{ secrets.ENV_KEYS }}
-        run: printf '%s' "$ENV_KEYS" > env/.env.keys.production
+        run: echo "${{ secrets.ENV_KEYS }}" > env/.env.keys.production
 
       - name: Build
         run: bun run build

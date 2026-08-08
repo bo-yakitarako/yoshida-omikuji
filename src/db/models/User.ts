@@ -73,7 +73,8 @@ export class User extends Model<User.Data> {
     const result = omikujiKeys[percentages.findIndex((p) => p > random)]!;
     await Result.create({ result, ...todayQuery });
     const nextStreak = (await this.hasStreak()) ? this.streak + 1 : 1;
-    await this.update({ [result]: this[result] + 1, streak: nextStreak });
+    const streak = nextStreak > this.streak ? nextStreak : undefined;
+    await this.update({ [result]: this[result] + 1, streak });
     await Total.increment(result);
     return { omikuji: omikuji[result], success: true };
   }
