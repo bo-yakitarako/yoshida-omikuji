@@ -60,8 +60,8 @@ export const checkMonthCounts = async (interaction: ChatInputCommandInteraction)
     return;
   }
   const today = dayjs();
-  const year = interaction.options.getNumber('year') ?? today.year();
-  const month = interaction.options.getNumber('month') ?? today.month() + 1;
+  const year = interaction.options.getInteger('year') ?? today.year();
+  const month = interaction.options.getInteger('month') ?? today.month() + 1;
   const embed = await user.buildMonthCountEmbed(interaction, year, month);
   if (embed === null) {
     await interaction.ephemeral('その月は占っていないよ');
