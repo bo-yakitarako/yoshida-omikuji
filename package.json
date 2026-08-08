@@ -30,7 +30,7 @@
   "dependencies": {
     "@libsql/client": "^0.17.2",
     "dayjs": "^1.11.19",
-    "disbord": "^2.3.6",
+    "disbord": "^2.3.8",
     "discord.js": "^14.27.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.1",

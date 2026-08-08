@@ -85,29 +85,6 @@ jobs:
           ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -s <<'EOF'
           set -e
           mkdir -p ~/.config/systemd/user
-          cat > ~/.config/systemd/user/yoshida-mongo.service <<'UNIT'
-          [Unit]
-          Description=yoshida discord bot one shot script: mongo
-
-          [Service]
-          Type=oneshot
-          WorkingDirectory=${{ secrets.DEPLOY_PATH }}
-          ExecStart=mise run mongo
-
-          [Install]
-          WantedBy=default.target
-          UNIT
-          cat > ~/.config/systemd/user/yoshida-mongo.timer <<'UNIT'
-          [Unit]
-          Description=Timer for yoshida discord bot one shot script: mongo
-
-          [Timer]
-          OnCalendar=*-*-* *:00:00
-          Persistent=false
-
-          [Install]
-          WantedBy=timers.target
-          UNIT
           cat > ~/.config/systemd/user/yoshida-notice.service <<'UNIT'
           [Unit]
           Description=yoshida discord bot one shot script: notice
@@ -131,31 +108,6 @@ jobs:
           [Install]
           WantedBy=timers.target
           UNIT
-          cat > ~/.config/systemd/user/yoshida-patchJson.service <<'UNIT'
-          [Unit]
-          Description=yoshida discord bot one shot script: patchJson
-
-          [Service]
-          Type=oneshot
-          WorkingDirectory=${{ secrets.DEPLOY_PATH }}
-          ExecStart=mise run patchJson
-
-          [Install]
-          WantedBy=default.target
-          UNIT
-          cat > ~/.config/systemd/user/yoshida-patchJson.timer <<'UNIT'
-          [Unit]
-          Description=Timer for yoshida discord bot one shot script: patchJson
-
-          [Timer]
-          OnCalendar=*-*-* *:00:00
-          Persistent=false
-
-          [Install]
-          WantedBy=timers.target
-          UNIT
           systemctl --user daemon-reload
-          systemctl --user enable --now yoshida-mongo.timer
           systemctl --user enable --now yoshida-notice.timer
-          systemctl --user enable --now yoshida-patchJson.timer
           EOF
