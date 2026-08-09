@@ -86,15 +86,20 @@ export class User extends Model<User.Data> {
     const count = `(全${this.totalCount}回)`;
     const author = getMemberInfo(interaction, (name) => `${name}くんの軌跡${count}`);
     const description = this.buildCountDescription();
-    const fields = this.buildSequenceCountFields();
+    const fields = this.buildStreakFields();
     return buildEmbed(author, description, fields, 'success');
   }
 
-  private buildSequenceCountFields() {
+  private buildStreakFields() {
+    const maxStreakField =
+      this.maxStreak > 1 ? [{ name: '過去最高連続日数は...？', value: `**${this.maxStreak}日**`, inline: false }] : [];
     if (this.streak <= 1 || !this.updatedAt.isSame(dayjs(), 'date')) {
-      return [];
+      return [...maxStreakField];
     }
-    return [{ name: 'なんと今...', value: `**連続${this.streak}日**連続おみくじ継続中！`, inline: false }];
+    return [
+      { name: 'なんと今...', value: `**連続${this.streak}日**連続おみくじ継続中！`, inline: false },
+      ...maxStreakField,
+    ];
   }
 
   public async buildMonthCountEmbed(interaction: RepliableInteraction, year: number, month: number) {
