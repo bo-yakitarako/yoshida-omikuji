@@ -56,7 +56,7 @@ export class User extends Model<User.Data> {
 
   public async draw(discordId: string) {
     const today = dayjs();
-    const todayQuery = { userId: this.id, discordId, year: today.year(), month: today.month() + 1, day: today.date() };
+    const todayQuery = { discordId, year: today.year(), month: today.month() + 1, day: today.date() };
     const todayResult = await Result.find(todayQuery);
     if (todayResult !== null) {
       return { omikuji: omikuji[todayResult.result], success: false };
@@ -64,14 +64,14 @@ export class User extends Model<User.Data> {
     if (this.discordId === process.env.YOSHIDA_USER_ID) {
       const nextStreak = (await this.hasStreak()) ? this.streak + 1 : 1;
       await this.update({ yoshida: this.yoshida + 1, streak: nextStreak });
-      await Result.create({ result: 'yoshida', ...todayQuery });
+      await Result.create({ userId: this.id, result: 'yoshida', ...todayQuery });
       await Total.increment('yoshida');
       return { omikuji: '吉田', success: true };
     }
     const omikujiKeys = Object.keys(omikuji) as Omikuji[];
     const random = Math.floor(Math.random() * 1000);
     const result = omikujiKeys[percentages.findIndex((p) => p > random)]!;
-    await Result.create({ result, ...todayQuery });
+    await Result.create({ userId: this.id, result, ...todayQuery });
     const nextStreak = (await this.hasStreak()) ? this.streak + 1 : 1;
     const streak = nextStreak > this.streak ? nextStreak : undefined;
     await this.update({ [result]: this[result] + 1, streak });
