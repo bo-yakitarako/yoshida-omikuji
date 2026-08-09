@@ -34,7 +34,6 @@
     "discord.js": "^14.27.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
-    "mongodb": "^7.5.0",
     "pureimage": "^0.4.20"
   },
   "devDependencies": {

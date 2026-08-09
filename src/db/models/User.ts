@@ -54,6 +54,9 @@ export class User extends Model<User.Data> {
   @Column('integer', { default: 0 })
   accessor streak!: number;
 
+  @Column('integer', { default: 0 })
+  accessor maxStreak!: number;
+
   public async draw(discordId: string) {
     const today = dayjs();
     const todayQuery = { discordId, year: today.year(), month: today.month() + 1, day: today.date() };
@@ -72,9 +75,9 @@ export class User extends Model<User.Data> {
     const random = Math.floor(Math.random() * 1000);
     const result = omikujiKeys[percentages.findIndex((p) => p > random)]!;
     await Result.create({ userId: this.id, result, ...todayQuery });
-    const nextStreak = (await this.hasStreak()) ? this.streak + 1 : 1;
-    const streak = nextStreak > this.streak ? nextStreak : undefined;
-    await this.update({ [result]: this[result] + 1, streak });
+    const streak = (await this.hasStreak()) ? this.streak + 1 : 1;
+    const maxStreak = streak > this.maxStreak ? streak : undefined;
+    await this.update({ [result]: this[result] + 1, streak, maxStreak });
     await Total.increment(result);
     return { omikuji: omikuji[result], success: true };
   }
@@ -135,7 +138,12 @@ export class User extends Model<User.Data> {
 
   private async hasStreak() {
     const yesterday = dayjs().subtract(1, 'day');
-    const query = { userId: this.id, year: yesterday.year(), month: yesterday.month() + 1, day: yesterday.date() };
+    const query = {
+      discordId: this.discordId,
+      year: yesterday.year(),
+      month: yesterday.month() + 1,
+      day: yesterday.date(),
+    };
     const hasStreak = await Result.exists(query);
     return hasStreak;
   }
@@ -155,5 +163,6 @@ export namespace User {
     kyo?: number;
     daikyo?: number;
     streak?: number;
+    maxStreak?: number;
   };
 }
