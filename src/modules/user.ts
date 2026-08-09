@@ -97,6 +97,6 @@ export const sendTotalResult = async (interaction: RepliableInteraction) => {
     .filter(([, count]) => count > 0)
     .map(([luck, count]) => `${omikuji[luck]}: ${count}回`)
     .join('\n');
-  const embeds = [buildEmbed(title, description, 'info')];
+  const embeds = [buildEmbed(title, description)];
   await interaction.reply({ embeds });
 };
