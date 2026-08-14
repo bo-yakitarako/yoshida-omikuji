@@ -97,7 +97,7 @@ export class User extends Model<User.Data> {
       return [...maxStreakField];
     }
     return [
-      { name: 'なんと今...', value: `**連続${this.streak}日**連続おみくじ継続中！`, inline: false },
+      { name: 'なんと今...', value: `**連続${this.streak}日**おみくじ継続中！`, inline: false },
       ...maxStreakField,
     ];
   }
